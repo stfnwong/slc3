@@ -16,8 +16,7 @@ CFLAGS=-Wall -g2 -pthread -D_REENTRANT $(OPT)
 TESTFLAGS=-lgtest -lgtest_main
 LDFLAGS =$(shell root-config --ldflags) -pthread
 LIBS = 
-# TODO: these will turn into cunit
-#TEST_LIBS = -lgtest -lgtest_main
+TEST_LIBS = -lcheck
 
 
 # Object targets
@@ -42,11 +41,16 @@ $(TEST_OBJECTS): $(OBJ_DIR)/%.o : $(TEST_DIR)/%.c
 	$(CC) $(CFLAGS) $(INCS) -c $< -o $@ 
 	@echo "Compiled test object "$<""
 
-# ======== TESTS ======== 
+# ======== UNIT TEST TARGETS ======== #
+test_state: $(OBJECTS) $(TEST_OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
+		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
+
 
 all : test
 
-test : $(OBJECTS) $(TEST_OBJECTS)
+# ======== TESTS ======== 
+test : test_state
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 

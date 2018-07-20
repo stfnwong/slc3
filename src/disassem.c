@@ -5,57 +5,9 @@
  */
 #include <stdio.h>
 #include <stdint.h>
+#include "disassem.h"
 #include "opcode.h"
 
-int check_imm(uint16_t instr)
-{
-    return (instr & 0x0020) ? 1 : 0;
-}
-
-inline uint8_t dis_op1(uint16_t code)
-{
-    return (code & 0x0E00) >> 8;
-}
-
-inline uint8_t dis_op2(uint16_t code)
-{
-    return (code & 0x01E0) >> 5;
-}
-
-inline uint8_t dis_op3(uint16_t code)
-{
-    return (code & 0x0006) >> 8;
-}
-
-inline uint8_t dis_imm(uint16_t code)
-{
-    return (code & 0x000F);
-}
-
-inline uint8_t dis_offset(uint16_t code)
-{
-    return (code & 0x00FF);
-}
-
-inline uint8_t dis_jmp(uint16_t code)
-{
-    return (code & 0x01E0) >> 5;
-}
-
-inline uint8_t dis_instr(uint16_t code)
-{
-    return (code & 0xE000) >> 8;
-}
-
-inline uint16_t dis_pc11(uint16_t code)
-{
-    return (code & 0x0EFF);
-}
-
-inline uint16_t dis_pc9(uint16_t code)
-{
-    return (code & 0x01FF);
-}
 
 // TODO : Do I need to return anything?
 void dis_lc3_op(uint16_t *codebuf, int pc)
