@@ -46,6 +46,7 @@ $(TEST_OBJECTS): $(OBJ_DIR)/%.o : $(TEST_DIR)/%.c
 
 all : test
 
+test : $(OBJECTS) $(TEST_OBJECTS)
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 
