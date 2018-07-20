@@ -16,6 +16,8 @@ START_TEST(test_init_state)
 {
     uint32_t mem_size = 4096;
     uint32_t trace_size = 512;
+    
+    fprintf(stdout, "Testing state object initialization....");
 
     LC3State* state = init_state(mem_size, trace_size);
     // Check memory size was assigned correctly 
@@ -36,29 +38,19 @@ START_TEST(test_init_state)
     ck_assert_int_eq(0, state->cc.z);
     ck_assert_int_eq(0, state->cc.p);
 
+    fprintf(stdout, "done\n");
+
     destroy_state(state);
 
 } END_TEST
 
-//START_TEST(test_gpr_mapping)
-//{
-//    uint32_t mem_size = 4096;
-//    uint32_t trace_size = 512;
-//
-//    LC3State* state = init_state(mem_size, trace_size);
-//    // Check memory size was assigned correctly 
-//    ck_assert_int_eq(mem_size, state->mem_size);
-//    ck_assert_int_eq(trace_size, state->pc_trace->size);
-//
-//    // Look inside gpr
-//
-//    destroy_state(state);
-//} END_TEST
 
 START_TEST(test_memory_load)
 {
     uint32_t mem_size = 4096;
     uint32_t trace_size = 512;
+
+    fprintf(stdout, "Testing memory load...\n");
 
     LC3State* state = init_state(mem_size, trace_size);
     // Check memory size was assigned correctly 
@@ -68,7 +60,7 @@ START_TEST(test_memory_load)
     for(int i = 0; i < mem_size; i++)
         ck_assert_int_eq(0, state->memory[i]);
 
-    fprintf(stdout, "Generating random memory contents... ");
+    fprintf(stdout, "Generating random memory contents... \n");
     uint8_t *mem_contents;
     mem_contents = malloc(sizeof(uint8_t) * mem_size);
     if(!mem_contents)
@@ -97,6 +89,7 @@ START_TEST(test_memory_load)
     if(ret != 0)
         exit(-1);
 
+    fprintf(stdout, "Check state object memory...\n");
     // Check the memory contents
     for(int i = 0; i < state->mem_size; i++)
         ck_assert_int_eq(mem_contents[i], state->memory[i]);
