@@ -23,11 +23,11 @@ class TestMachine : public ::testing::Test
 };
 
 // TODO : actually much of this may change
-TEST_F(TestMachine, test_init)
-{
-    Machine m(this->mem_size);
-    ASSERT_EQ(this->mem_size, m.getMemSize());
-}
+//TEST_F(TestMachine, test_init)
+//{
+//    Machine m(this->mem_size);
+//    ASSERT_EQ(this->mem_size, m.getMemSize());
+//}
 
 int main(int argc, char *argv[])
 {
