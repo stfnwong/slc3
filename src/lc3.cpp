@@ -79,6 +79,28 @@ inline uint16_t LC3::instr_get_pc11(const uint16_t instr) const
     return (instr & 0x03FF);
 }
 
+inline void LC3::set_flags(const uint8_t val)
+{
+    if(val == 0)
+    {
+        this->cpu.z = true;
+        this->cpu.n = false;
+        this->cpu.p = false;
+    }
+    else if(val > 0)
+    {
+        this->cpu.z = false;
+        this->cpu.n = false;
+        this->cpu.p = true;
+    }
+    else
+    {
+        this->cpu.z = false;
+        this->cpu.n = true;
+        this->cpu.p = false;
+    }
+}
+
 
 
 // ======== Memory 
@@ -127,6 +149,7 @@ void LC3::execute(const uint16_t instr)
     uint8_t dst;
     uint8_t sr1, sr2;
     uint8_t imm5;
+    uint16_t pc9;
     uint16_t op;
 
     op = this->instr_get_opcode(instr);
@@ -146,6 +169,7 @@ void LC3::execute(const uint16_t instr)
 
                 this->cpu.gpr[dst] = this->cpu.gpr[sr1] + this->cpu.gpr[sr2];
             }
+            this->set_flags(this->cpu.gpr[dst]);
             break;
 
         case LC3_AND:
@@ -162,6 +186,16 @@ void LC3::execute(const uint16_t instr)
 
                 this->cpu.gpr[dst] = this->cpu.gpr[sr1] & this->cpu.gpr[sr2];
             }
+            this->set_flags(this->cpu.gpr[dst]);
+            break;
+
+
+        // Loads
+        case LC3_LD:
+            dst = this->instr_get_dest(instr);
+            pc9 = this->instr_get_pc9(instr);
+            this->cpu.gpr[dst] = this->mem[this->cpu.pc + pc9];
+            this->set_flags(this->cpu.gpr[dst]);
             break;
 
         default:
@@ -169,13 +203,30 @@ void LC3::execute(const uint16_t instr)
                 std::setw(4) << std::setfill('0') << 
                 op << std::endl;
             break;
-
     }
 }
 
 
 // Getters 
+LC3Proc LC3::getProcState(void) const
+{
+    return this->cpu;
+}
+
 uint16_t LC3::getMemSize(void) const
 {
     return this->mem_size;
+}
+
+bool LC3::getZero(void) const
+{
+    return this->cpu.z;
+}
+bool LC3::getPos(void) const
+{
+    return this->cpu.p;
+}
+bool LC3::getNeg(void) const
+{
+    return this->cpu.n;
 }

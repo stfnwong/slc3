@@ -34,10 +34,12 @@
 #define LC3_JMP_RET 0x0C
 
 // List of opcodes + mnemonic string
-//Opcode LC3Opcodes[] = {
-//    {LC3_ADD, "ADD"},
-//    {LC3_ADD, "ADDI"}
-//};
+static const Opcode LC3_OPCODE_LIST[] = {
+    {LC3_ADD, "ADD"},
+    {LC3_AND, "AND"},
+    {LC3_LD,  "LD"},
+    {LC3_ST,  "ST"}
+};
 
 typedef struct 
 {
@@ -73,6 +75,8 @@ class LC3
         inline uint8_t  instr_get_imm5(const uint16_t instr) const;
         inline uint16_t instr_get_pc9(const uint16_t instr) const;
         inline uint16_t instr_get_pc11(const uint16_t instr) const;
+        // Set flags 
+        inline void     set_flags(const uint8_t val);
 
     public:
         LC3(const uint16_t mem_size);
@@ -89,7 +93,11 @@ class LC3
         void     execute(const uint16_t instr);
 
         // Getters 
+        LC3Proc  getProcState(void) const;
         uint16_t getMemSize(void) const;
+        bool     getZero(void) const;
+        bool     getPos(void) const;
+        bool     getNeg(void) const;
 
 };
 

@@ -52,11 +52,15 @@ test_lc3: $(OBJECTS) $(TEST_OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
 		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
+test_mtrace: $(OBJECTS) $(TEST_OBJECTS)
+	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
+		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
+
 
 all : test
 
 # ======== TESTS ======== 
-test : test_machine test_lc3
+test : test_machine test_lc3 test_mtrace
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 
