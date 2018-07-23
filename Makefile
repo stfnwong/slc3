@@ -44,7 +44,7 @@ $(TEST_OBJECTS): $(OBJ_DIR)/%.o : $(TEST_DIR)/%.cpp
 	@echo "Compiled test object "$<""
 
 # ======== UNIT TEST TARGETS ======== #
-test_state: $(OBJECTS) $(TEST_OBJECTS)
+test_machine: $(OBJECTS) $(TEST_OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
 		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
@@ -52,7 +52,7 @@ test_state: $(OBJECTS) $(TEST_OBJECTS)
 all : test
 
 # ======== TESTS ======== 
-test : test_state
+test : test_machine
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 
