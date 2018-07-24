@@ -74,7 +74,9 @@ template <typename T> unsigned int MTrace<T>::getTraceSize(void) const
 }
 
 
-// ==== Machine base class 
+/*
+ * MACHINE
+ */
 class Machine
 {
     private:

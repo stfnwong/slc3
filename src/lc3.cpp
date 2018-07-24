@@ -217,7 +217,6 @@ uint16_t LC3::getMemSize(void) const
 {
     return this->mem_size;
 }
-
 bool LC3::getZero(void) const
 {
     return this->cpu.z;
@@ -230,3 +229,9 @@ bool LC3::getNeg(void) const
 {
     return this->cpu.n;
 }
+
+//std::vector<Opcode> LC3::getOpcodes(void) const
+//{
+//    std::vector<Opcode> o(this->opcode_list);
+//    return o;
+//}

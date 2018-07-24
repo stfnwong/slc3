@@ -56,11 +56,15 @@ test_mtrace: $(OBJECTS) $(TEST_OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
 		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
+test_lexer: $(OBJECTS) $(TEST_OBJECTS)
+	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
+		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
+
 
 all : test
 
 # ======== TESTS ======== 
-test : test_machine test_lc3 test_mtrace
+test : test_machine test_lc3 test_mtrace test_lexer 
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 

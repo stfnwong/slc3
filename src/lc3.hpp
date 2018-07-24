@@ -34,12 +34,7 @@
 #define LC3_JMP_RET 0x0C
 
 // List of opcodes + mnemonic string
-static const Opcode LC3_OPCODE_LIST[] = {
-    {LC3_ADD, "ADD"},
-    {LC3_AND, "AND"},
-    {LC3_LD,  "LD"},
-    {LC3_ST,  "ST"}
-};
+
 
 typedef struct 
 {
@@ -62,6 +57,15 @@ class LC3
         void     allocMem(void);
         // Processor
         LC3Proc  cpu;
+
+    private:
+        // Opcode meta information
+        //Opcode opcode_list[] = {
+        //    {LC3_ADD, "ADD"},
+        //    {LC3_AND, "AND"},
+        //    {LC3_LD,  "LD"},
+        //    {LC3_ST,  "ST"}
+        //};
 
     private:
         // Instruction decode helper functions 
@@ -98,6 +102,7 @@ class LC3
         bool     getZero(void) const;
         bool     getPos(void) const;
         bool     getNeg(void) const;
+        std::vector<Opcode> getOpcodes(void) const;
 
 };
 
