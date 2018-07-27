@@ -44,27 +44,17 @@ $(TEST_OBJECTS): $(OBJ_DIR)/%.o : $(TEST_DIR)/%.cpp
 	@echo "Compiled test object "$<""
 
 # ======== UNIT TEST TARGETS ======== #
-test_machine: $(OBJECTS) $(TEST_OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
-		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
+TESTS=test_machine test_lc3 test_mtrace test_lexer
 
-test_lc3: $(OBJECTS) $(TEST_OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
-		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
-
-test_mtrace: $(OBJECTS) $(TEST_OBJECTS)
-	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
-		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
-
-test_lexer: $(OBJECTS) $(TEST_OBJECTS)
+$(TESTS): $(OBJECTS) $(TEST_OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
 		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
 
+# Main targets 
 all : test
 
-# ======== TESTS ======== 
-test : test_machine test_lc3 test_mtrace test_lexer 
+test : $(TESTS)
 
 clean:
 	rm -rfv *.o $(OBJ_DIR)/*.o 

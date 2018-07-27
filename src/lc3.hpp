@@ -56,16 +56,8 @@ class LC3
         uint16_t mem_size;
         void     allocMem(void);
         // Processor
-        LC3Proc  cpu;
-
-    private:
-        // Opcode meta information
-        //Opcode opcode_list[] = {
-        //    {LC3_ADD, "ADD"},
-        //    {LC3_AND, "AND"},
-        //    {LC3_LD,  "LD"},
-        //    {LC3_ST,  "ST"}
-        //};
+        LC3Proc     cpu;
+        OpcodeTable op_table;
 
     private:
         // Instruction decode helper functions 
@@ -81,6 +73,8 @@ class LC3
         inline uint16_t instr_get_pc11(const uint16_t instr) const;
         // Set flags 
         inline void     set_flags(const uint8_t val);
+        // Build opcode table 
+        void            build_op_table(void);
 
     public:
         LC3(const uint16_t mem_size);
@@ -102,8 +96,10 @@ class LC3
         bool     getZero(void) const;
         bool     getPos(void) const;
         bool     getNeg(void) const;
-        std::vector<Opcode> getOpcodes(void) const;
+        //std::vector<Opcode> getOpcodes(void) const;
 
+        // Opcode Table (public interface)
+        OpcodeTable getOpTable(void) const; //get complete table
 };
 
 

@@ -14,6 +14,7 @@ LC3::LC3(const uint16_t mem_size)
 {
     this->mem_size = mem_size;
     this->allocMem();
+    this->build_op_table();
 }
 
 LC3::~LC3()
@@ -99,6 +100,19 @@ inline void LC3::set_flags(const uint8_t val)
         this->cpu.n = true;
         this->cpu.p = false;
     }
+}
+
+void LC3::build_op_table(void)
+{
+    Opcode opcode_list[] = {
+        {LC3_ADD, "ADD"},
+        {LC3_AND, "AND"},
+        {LC3_LD,  "LD"},
+        {LC3_ST,  "ST"}
+    };
+    // iterate over this in the C++ way
+    for(const Opcode &op : opcode_list)
+        this->op_table.add(op);
 }
 
 
@@ -235,3 +249,8 @@ bool LC3::getNeg(void) const
 //    std::vector<Opcode> o(this->opcode_list);
 //    return o;
 //}
+
+OpcodeTable LC3::getOpTable(void) const
+{
+    return this->op_table;
+}

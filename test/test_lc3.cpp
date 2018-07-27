@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 // Modules under test 
 #include "lc3.hpp"
+#include "opcode.hpp"
 
 // Fixture for testing MTrace object
 class TestLC3 : public ::testing::Test
@@ -40,9 +41,30 @@ unsigned int rand_interval(unsigned int min, unsigned int max)
     do
     {
         r = rand();
-    } while (r >= limit);
+    } while (r >= (int)limit);
 
     return min + (r / buckets);
+}
+
+// Helper function to generate sample Opcode table 
+OpcodeTable test_gen_opcode_table(void)
+{
+    OpcodeTable op_table;
+
+    Opcode op_list[] = {
+        {0x01, "ADD"},
+        {0x05, "AND"},
+        {0x00, "BR" },
+        {0x04, "JSR"},
+        {0x02, "LD" },
+        {0x06, "LDI"},
+        {0x0E, "LEA"}
+    };
+
+    for(const Opcode& op : op_list)
+        op_table.add(op);
+
+    return op_table;
 }
 
 TEST_F(TestLC3, test_init)
@@ -101,6 +123,52 @@ TEST_F(TestLC3, test_load_mem_file)
 
     delete[] mem_contents;
 
+}
+
+TEST_F(TestLC3, test_build_op_table)
+{
+    LC3 lc3(this->mem_size);
+    // Opcode Table is built in constructor, read it out
+    // and check against reference Opcode Table
+    OpcodeTable lc3_op_table = lc3.getOpTable();
+
+    Opcode op;
+    std::cout << "Dumping opcodes from LC3 table to console..." << std::endl;
+    for(unsigned int idx = 0; idx < lc3_op_table.getNumOps(); idx++)
+    {
+        lc3_op_table.getIdx(idx, op);
+        printOpcode(op);
+        std::cout << std::endl;
+    }
+
+    // Test get by opcode
+    lc3_op_table.get(0x01, op);
+    ASSERT_STREQ("ADD", op.mnemonic.c_str());
+    lc3_op_table.get(0x05, op);
+    ASSERT_STREQ("AND", op.mnemonic.c_str());
+    lc3_op_table.get(0x02, op);
+    ASSERT_STREQ("LD", op.mnemonic.c_str());
+    lc3_op_table.get(0x03, op);
+    ASSERT_STREQ("ST", op.mnemonic.c_str());
+
+    // Test get by opcode
+    lc3_op_table.get("ADD", op);
+    ASSERT_EQ(0x01, op.opcode);
+    lc3_op_table.get("AND", op);
+    ASSERT_EQ(0x05, op.opcode);
+    lc3_op_table.get("LD", op);
+    ASSERT_EQ(0x02, op.opcode);
+    lc3_op_table.get("ST", op);
+    ASSERT_EQ(0x03, op.opcode);
+
+    // Test the error case for string matching
+    lc3_op_table.get("GARBAGE", op);
+    ASSERT_EQ(0, op.opcode);
+    ASSERT_STREQ("M_INVALID", op.mnemonic.c_str());
+
+    lc3_op_table.get(0xFE, op);
+    ASSERT_EQ(0, op.opcode);
+    ASSERT_STREQ("M_INVALID", op.mnemonic.c_str());
 }
 
 // TODO : test arithmetic

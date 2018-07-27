@@ -8,7 +8,11 @@
 #ifndef __LEXER_HPP
 #define __LEXER_HPP
 
+#include <cstdint>
 #include <string>
+#include <vector>
+// Pass an opcode table for the machine to the lexer
+#include "opcode.hpp"
 
 // Some lexer contants
 typedef enum {
@@ -16,62 +20,122 @@ typedef enum {
     LEX_COM, LEX_COMMA, LEX_PLUS, LEX_MINUS, LEX_STAR
 } LexSym;
 
-class Token
+// NOTE: This is a LC3 specific lineinfo
+// structure. Consider generalizing in
+// future
+typedef struct{
+    unsigned int line_num;
+    unsigned int addr;
+    std::string  symbol;     //char* symbol // <- faster?;
+    std::string  label;     //char* label // <- faster?;
+    // Opcode / Operand info
+    Opcode       opcode;
+    uint16_t     dest;
+    uint16_t     src1;
+    uint16_t     src2;
+    uint16_t     imm;
+    bool         is_label;
+    bool         is_directive;
+} LineInfo;
+
+void initLineInfo(LineInfo& l);
+
+// Assembler directives 
+const char LEX_ORIG[] = ".ORIG";
+const char LEX_END[]  = ".END";
+const char LEX_BLKW[] = ".BLKW";
+const char LEX_FILL[] = ".FILL";
+const char LEX_STRINGZ[] = ".STRINGZ";
+const char LEX_INVALID[] = ".INVALID";
+
+class SourceInfo
 {
+    private:
+        std::vector <LineInfo> line_info;
+        
     public:
-        LexSym type;
-        std::string lexeme;
-        int num;
-        bool label;
+        SourceInfo();
+        ~SourceInfo();
+        // Add/remove lines
+        void add(const LineInfo& l);
+        LineInfo get(const unsigned int idx) const;
+        // FIXME: just for debug, remove later
+        unsigned int getLineNum(const unsigned int idx) const;
+}; 
 
-    public:
-        Token(const LexSym t, const std::string& lex, const int v, const bool l);
-        ~Token();
-        Token(const Token& that);
-};
+typedef struct
+{
+    uint16_t addr;
+    std::string name;
+} Symbol;
 
+// TODO: for now we just lex for LC3, but maybe we pass
+// a machine object here and extract the correct symbol/address
+// mappings from that object
 class Lexer
 {
     private:
+        bool verbose;
+        OpcodeTable op_table;
         std::string filename;
         std::string src;
-        unsigned int pos;
+        unsigned int cur_pos;
         char cur_char;
         char* token_buf;        // build up token here
-        uint32_t buf_size;
+        unsigned int token_buf_size;
         void allocMem(void);
+        void initVars(void);
+
+    private:
+        //LineInfo   line_info;
+        SourceInfo source_info;
+
+    private:
         // Source movement
         void advance(void);
-        // Token handlers 
-        bool isDigit(void);
-        bool isAlpha(void);
-        bool isSym(void);
+        bool exhausted(void) const;
+        void skipWhitespace(void);
+        void skipComment(void);
+        void readAlphaNum(void);    // TODO  change to read_symbol
+        bool isAlphaNum(void);
+        bool isSpace(void);
+        bool isMnemonic(void);
+        // TODO: may only need this during debug 
+        void skipLine(void);
+        
+    private:
+        // Symbol parse
+        Opcode parseOpcode(void);
+        uint16_t parseDest(void);
+        uint16_t parseSR1(void);
+        uint16_t parseSR2(void);
 
-        //Token getNextToken(void);
-        void getNextToken(Token& t);
-        // As per Lexer in "Compilers and Compiler generators"
-        void getComment(void);
+    // Source internals 
+    private:
+        unsigned int cur_line;
+    public:
+        // Lexing function
+        void lex(void);
 
     public:
-        Lexer();
-        Lexer(const std::string& filename);
+        Lexer(const OpcodeTable& ot);
+        Lexer(const OpcodeTable& ot, const std::string& filename);
         ~Lexer();
         Lexer(const Lexer& that) = delete;
 
         // Load source from disk
         void loadFile(const std::string& filename);
-        
-        // Manipulate characters in source 
-        bool endline(void);
-        char nextChar(void);
-        char getChar(void) const;
-
         // Standard getters 
         unsigned int getSrcLength(void) const;
         std::string getFilename(void) const;
         std::string dumpSrc(void) const;
 
-};
+        void setVerbose(const bool b);
+        bool getVerbose(void) const;
 
+        // TODO : debug, remove 
+        bool isASCII(void) const;
+        char dumpchar(const unsigned int idx) const;
+};
 
 #endif /*__LEXER_HPP*/
