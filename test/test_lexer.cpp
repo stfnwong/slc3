@@ -12,6 +12,7 @@
 // Modules under test 
 #include "lexer.hpp"
 #include "lc3.hpp"      // for op_table helper function
+#include "source.hpp"
 
 //#define DUMP_SOURCE
 #define TEST_NUM_OPS 11
@@ -141,20 +142,19 @@ TEST_F(TestLexer, test_lex_source)
     ASSERT_EQ(true, l.isASCII());
 #ifdef DUMP_SOURCE
     for(unsigned int idx = 0; idx < this->src_length; idx++)
-    {
         std::cout << l.dumpchar(idx);
-    }
     std::cout << std::endl;
 #endif /*DUMP_SOURCE*/
     ASSERT_EQ(this->expected_num_ops, l.opTableSize());
     // Dump the op table and show ops 
     std::cout << "Dumping lexer opcode table" << std::endl;
     l.dumpOpTable();
+    l.setVerbose(true);
 
-    l.lex();
+    SourceInfo lsource;
+    lsource = l.lex();
 
     // Dump the source info to console
-    SourceInfo lsource = l.dumpSrcInfo();
     std::cout << "Lexer created info for " << lsource.getNumLines() << " lines" << std::endl;
     for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
     {

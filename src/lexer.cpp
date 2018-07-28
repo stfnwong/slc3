@@ -15,73 +15,6 @@
 // derive an LC3 class to make this 'generic'
 #include "lc3.hpp"
 
-// LineInfo
-void initLineInfo(LineInfo& l)
-{
-    l.line_num = 0;
-    l.addr     = 0;
-    l.symbol   = "\0";
-    l.label    = "\0";
-    l.opcode   = {0x0, "DEFAULT"},
-    l.arg1     = 0;
-    l.arg2     = 0;
-    l.arg3     = 0;
-    l.imm      = 0;
-    l.flags    = 0;
-    l.is_imm   = false;
-    l.is_label = false;
-    l.error    = false;
-    l.is_directive = false;
-}
-
-/*
- * SOURCEINFO 
- */
-SourceInfo::SourceInfo() {} 
-
-SourceInfo::~SourceInfo() {} 
-
-void SourceInfo::add(const LineInfo& l)
-{
-    this->line_info.push_back(l);
-}
-
-LineInfo SourceInfo::get(const unsigned int idx) const
-{
-    if(idx < this->line_info.size())
-        return this->line_info[idx];
-    else
-    {
-        LineInfo l;
-        l.line_num = 0;
-        
-        return l;
-    }
-}
-
-unsigned int SourceInfo::getLineNum(const unsigned int idx) const
-{
-    return this->line_info[idx].line_num;
-}
-
-unsigned int SourceInfo::getNumLines(void) const
-{
-    return this->line_info.size();
-}
-
-unsigned int SourceInfo::getNumError(void) const
-{
-    unsigned int num_err = 0;
-    
-    for(unsigned int idx = 0; idx < this->line_info.size(); idx++)
-    {
-        if(this->line_info[idx].error)
-            num_err++;
-    }
-
-    return num_err;
-}
-
 /*
  * LEXER 
  */
@@ -113,7 +46,7 @@ void Lexer::allocMem(void)
 
 void Lexer::initVars(void)
 {
-    this->verbose        = true;  // TODO: should be false in final ver
+    this->verbose        = false;
     this->cur_pos        = 0;
     this->token_buf_size = LEX_TOKEN_MAX_LEN;
     this->cur_line       = 0;
@@ -237,22 +170,11 @@ bool Lexer::getNextArg(void)
 
     this->advance();
     this->token_buf[idx] = '\0';
-    if(this->token_buf[0] == 'r' ||
-       this->token_buf[0] == 'R' || 
-       this->token_buf[0] == '#' ||
-       this->token_buf[0] == 'x' ||
-       this->token_buf[0] == 'X')
-    {
-        std::cout << "[" << __FUNCTION__ << "] valid arg <" <<
-            std::string(this->token_buf) << ">" << std::endl;
-        return true;
-    }
-    else
-    {
-        std::cout << "[" << __FUNCTION__ << "] invalid arg <" <<
-            std::string(this->token_buf) << ">" << std::endl;
-        return false;
-    }
+    return (this->token_buf[0] == 'r' ||
+            this->token_buf[0] == 'R' || 
+            this->token_buf[0] == '#' ||
+            this->token_buf[0] == 'x' ||
+            this->token_buf[0] == 'X') ? true : false;
 }
 
 void Lexer::parseOpcodeArgs(void)
@@ -299,9 +221,12 @@ void Lexer::parseOpcodeArgs(void)
 ARG_ERR:
     if(arg_err)
     {
-        std::cout << "[" << __FUNCTION__ << "] (line " <<
-            this->cur_line << ") error parsing arg " <<
-            err_argnum << " of ADD opcode" << std::endl;
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] (line " <<
+                this->cur_line << ") error parsing arg " <<
+                err_argnum << " of ADD opcode" << std::endl;
+        }
         this->line_info.error = true;
         this->skipLine();
     }
@@ -365,9 +290,12 @@ void Lexer::parseDirective(void)
             this->line_info.imm = std::stoi("0" + arg.substr(1, arg.length()));
         else
             this->line_info.imm = std::stoi(arg);
-
-        std::cout << "[" << __FUNCTION__ << "] set imm to <" <<
-            this->line_info.imm << ">" << std::endl;
+        
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] set imm to <" <<
+                this->line_info.imm << ">" << std::endl;
+        }
     }
 }
 
@@ -381,15 +309,15 @@ void Lexer::parseLine(void)
 
     initLineInfo(this->line_info);   
     this->line_info.line_num = this->cur_line;
-    std::cout << "[" << __FUNCTION__ << "] token_buf contains <" << 
-        std::string(this->token_buf) << ">" << std::endl;
-
     // Could be a directive 
     if(this->isDirective())
     {
-        std::cout << "[" << __FUNCTION__ << "] (line " << 
-            this->cur_line << ") found directive <" << 
-            std::string(this->token_buf) << ">" << std::endl;
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] (line " << 
+                this->cur_line << ") found directive <" << 
+                std::string(this->token_buf) << ">" << std::endl;
+        }
         this->parseDirective();
         return;
     }
@@ -426,10 +354,12 @@ void Lexer::parseLine(void)
         // We may have a labelled directive
         if(this->isDirective())
         {
-            std::cout << "[" << __FUNCTION__ << "] (line " <<
-                this->cur_line << ") found labelled directive <" << 
-                std::string(this->token_buf) << ">" << std::endl;
-
+            if(this->verbose)
+            {
+                std::cout << "[" << __FUNCTION__ << "] (line " <<
+                    this->cur_line << ") found labelled directive <" << 
+                    std::string(this->token_buf) << ">" << std::endl;
+            }
             this->parseDirective();
             return;
         }
@@ -457,7 +387,6 @@ void Lexer::parseLine(void)
     }
     this->skipWhitespace();
 
-
     // TODO : How to generically parse Opcodes?  Maybe I need virtual 
     // methods here 
     if(this->verbose)
@@ -474,8 +403,11 @@ void Lexer::parseLine(void)
             {
                 unsigned int num_flags;
                 num_flags = this->line_info.opcode.mnemonic.length() - 2;
-                std::cout << "[" << __FUNCTION__ << "] BR has " << 
-                    num_flags << " flag arguments" << std::endl;
+                if(this->verbose)
+                {
+                    std::cout << "[" << __FUNCTION__ << "] BR has " << 
+                        num_flags << " flag arguments" << std::endl;
+                }
 
                 for(unsigned int f = 0; f < num_flags; f++)
                 {
@@ -594,7 +526,6 @@ void Lexer::parseLine(void)
             this->skipLine();
             break;
 
-
         case LC3_ST:
         case LC3_STR:
             // Get src register 
@@ -637,7 +568,7 @@ void Lexer::parseLine(void)
 
 
 // Do lexing pass
-void Lexer::lex(void)
+SourceInfo Lexer::lex(void)
 {
     this->cur_line = 1;
     this->cur_pos  = 0;
@@ -669,6 +600,8 @@ void Lexer::lex(void)
             continue;
         }
     }
+
+    return this->source_info;
 }
 
 // ==== FILE LOADING
