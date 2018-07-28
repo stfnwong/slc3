@@ -83,7 +83,7 @@ void OpcodeTable::print(void) const
     fprintf(stdout, "%ld instructions in table\n", this->op_list.size());
     for(idx = 0; idx < this->op_list.size(); idx++)
     {
-        fprintf(stdout, "op %04d : [%s] %04X\n", 
+        fprintf(stdout, "op %04d : [%s] $%04X\n", 
                 idx+1, 
                 this->op_list[idx].mnemonic.c_str(), 
                 this->op_list[idx].opcode);

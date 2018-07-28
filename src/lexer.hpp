@@ -64,6 +64,8 @@ class SourceInfo
         void add(const LineInfo& l);
         LineInfo get(const unsigned int idx) const;
         unsigned int getLineNum(const unsigned int idx) const;
+        unsigned int getNumLines(void) const;
+        unsigned int getNumError(void) const;
 }; 
 
 typedef struct
@@ -100,16 +102,16 @@ class Lexer
         void skipWhitespace(void);
         void skipComment(void);
         void readSymbol(void);
-        bool isSymbol(void);
+        bool isSymbol(void) const;
+        bool isDirective(void) const;
         bool isSpace(void);
         bool isMnemonic(void);
-        // TODO: may only need this during debug 
         void skipLine(void);
         
     private:
         // Symbol parse
         LineInfo parseDirective(void);
-        LineInfo parseSymbol(void);
+        LineInfo parseLine(void);
         LineInfo parseLabelSymbol(void);
         void     parseNextArg(void);
 

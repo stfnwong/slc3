@@ -5,6 +5,7 @@
  * */
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <gtest/gtest.h>
@@ -13,6 +14,7 @@
 #include "lc3.hpp"      // for op_table helper function
 
 //#define DUMP_SOURCE
+#define TEST_NUM_OPS 10
 
 // Helper function to build op table for testing lexer
 OpcodeTable test_build_op_table(void)
@@ -22,10 +24,14 @@ OpcodeTable test_build_op_table(void)
         {LC3_ADD, "ADD"},
         {LC3_AND, "AND"},
         {LC3_LD,  "LD"},
-        {LC3_BR,  "BR"},
         {LC3_LDR, "LDR"},
         {LC3_LEA, "LEA"},
-        {LC3_ST,  "ST"}
+        {LC3_ST,  "ST"},
+        {LC3_NOT, "NOT"},
+        // BR and variants 
+        {LC3_BR,  "BR"},
+        {LC3_BRP,  "BRp"},
+        {LC3_BRN,  "BRn"},
     };
     // iterate over this in the C++ way
     for(const Opcode &op : opcode_list)
@@ -50,7 +56,7 @@ class TestSourceInfo : public ::testing::Test
         std::string src_filename = "data/pow10.asm";
         unsigned int src_length = 617; 
         OpcodeTable op_table;
-        unsigned int expected_num_ops = 7;
+        unsigned int expected_num_ops = TEST_NUM_OPS;
 };
 
 void TestSourceInfo::SetUp(void)
@@ -101,7 +107,7 @@ class TestLexer : public ::testing::Test
         // needs to be updated
         unsigned int src_length = 617; 
         OpcodeTable op_table;
-        unsigned int expected_num_ops = 7;
+        unsigned int expected_num_ops = TEST_NUM_OPS;
 };
 
 void TestLexer::SetUp(void)
@@ -124,13 +130,6 @@ TEST_F(TestLexer, test_init)
     ASSERT_EQ(0, l_blank.getSrcLength());
 }
 
-//TEST_F(TestLexer, test_dump_optable)
-//{
-//    Lexer l(this->op_table, this->src_file);
-//    ASSERT_EQ(this->src_length+1, l.getSrcLength());
-//    ASSERT_EQ(this->src_file, l.getFilename());
-//}
-
 TEST_F(TestLexer, test_lex_source)
 {
     ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
@@ -152,6 +151,28 @@ TEST_F(TestLexer, test_lex_source)
     l.dumpOpTable();
 
     l.lex();
+
+    // Dump the source info to console
+    SourceInfo lsource = l.dumpSrcInfo();
+    std::cout << "Lexer created info for " << lsource.getNumLines() << " lines" << std::endl;
+    for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
+    {
+        LineInfo info = lsource.get(idx);
+        std::cout << "==========================================" << std::endl;
+        std::cout << "line      : " << info.line_num << std::endl;
+        std::cout << "addr      : " << info.addr     << std::endl;
+        std::cout << "symbol    : " << info.symbol   << std::endl;
+        std::cout << "label     : " << info.label    << std::endl;
+        std::cout << "opcode    : " << std::hex << std::setw(4) << std::setfill('0') << info.opcode.opcode << std::endl;
+        std::cout << "mnemonic  : " << info.opcode.mnemonic << std::endl;
+        std::cout << "dest      : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
+        std::cout << "sr1       : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
+        std::cout << "sr2       : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
+        std::cout << "imm       : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
+        std::cout << "label     : " << info.is_label << std::endl;
+        std::cout << "directive : " << info.is_directive << std::endl;
+        std::cout << "error     : " << info.error << std::endl;
+    }
 }
 
 int main(int argc, char *argv[])

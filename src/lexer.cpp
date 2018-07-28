@@ -62,6 +62,24 @@ unsigned int SourceInfo::getLineNum(const unsigned int idx) const
     return this->line_info[idx].line_num;
 }
 
+unsigned int SourceInfo::getNumLines(void) const
+{
+    return this->line_info.size();
+}
+
+unsigned int SourceInfo::getNumError(void) const
+{
+    unsigned int num_err = 0;
+    
+    for(unsigned int idx = 0; idx < this->line_info.size(); idx++)
+    {
+        if(this->line_info[idx].error)
+            num_err++;
+    }
+
+    return num_err;
+}
+
 /*
  * LEXER 
  */
@@ -118,7 +136,6 @@ void Lexer::advance(void)
 
 bool Lexer::exhausted(void) const
 {
-    //return (this->cur_char == '\0') ? true : false;
     return (this->cur_char == '\0' ||
             this->cur_pos >= this->src.size()) ? true : false;
 }
@@ -134,11 +151,7 @@ void Lexer::skipWhitespace(void)
                  this->cur_char == '\n' || 
                  this->cur_char == '\t') ? true : false;
     }
-    //while(this->isSpace())
-    //    this->advance();
 
-    // advance one more to se the cur_pos just ahead of whitespace 
-    this->advance();
 }
 
 void Lexer::skipComment(void)
@@ -165,9 +178,16 @@ void Lexer::readSymbol(void)
     }
 }
 
-bool Lexer::isSymbol(void)
+bool Lexer::isSymbol(void) const
 {
     return (isalnum(toupper(this->cur_char)));
+}
+
+bool Lexer::isDirective(void) const 
+{
+    // TODO : This feels like a hack... there might be an
+    // extra 'advance()' somewhere
+    return (this->cur_char == '.' || this->token_buf[0] == '.');
 }
 
 bool Lexer::isSpace(void)
@@ -185,14 +205,6 @@ bool Lexer::isMnemonic(void)
     Opcode op;
     this->op_table.get(std::string(this->token_buf), op);
 
-    if(this->verbose)
-    {
-        std::cout << "[" << __FUNCTION__ << "] isMnemonic found mnemonic " << 
-            op.mnemonic << std::endl;
-        std::cout << "From token_buf " << std::string(this->token_buf) 
-            << std::endl;
-    }
-
     return (op.mnemonic != "M_INVALID") ? true : false;
 }
 
@@ -209,10 +221,13 @@ LineInfo Lexer::parseDirective(void)
     LineInfo info;
     
     initLineInfo(info);
-    this->readSymbol();
     info.is_directive = true;
     info.line_num     = this->cur_line;
+    this->readSymbol();
 
+    // Note: these symbols are also LC3 assembly specific, 
+    // in the generic version they will need to be moved out 
+    // to some other class / struct
     if(std::string(this->token_buf) == LEX_ORIG)
         info.symbol = LEX_ORIG;
     else if(std::string(this->token_buf) == LEX_END)
@@ -229,41 +244,37 @@ LineInfo Lexer::parseDirective(void)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (line " << 
-            this->cur_line << ") extracted symbol " <<
-            std::string(this->token_buf) << std::endl;
+            this->cur_line << ") extracted directive symbol " <<
+            std::string(this->token_buf) << " and set info.symbol as <"
+            << info.symbol << ">" << std::endl;
+    }
+    
+    if(info.symbol == LEX_INVALID)
+    {
+        info.error = true;
+        return info;
     }
 
     if(info.symbol == LEX_END)
         return info;
 
+    // Try to read the arg (if any)
     this->skipWhitespace();
-    bool is_hex = false;
-    size_t imm;
     if(this->isSymbol())
     {
-        // TODO : re-write this more elegantly
-        if(this->cur_char == 'x' || this->cur_char == 'X')
-            is_hex = true;
-        else if(this->cur_char == 'd' || this->cur_char == 'D')
-            is_hex = false;
-        this->advance();
         this->readSymbol();
-
         if(this->verbose)
         {
-            std::cout << "[" << __FUNCTION__ << "] found directive symbol " 
-                << std::string(this->token_buf) << std::endl;
-            std::cout << "(would be) Attempting to parse symbol <" 
-                << std::string(this->token_buf) << "> as a arg"
-                << std::endl;
+            std::cout << "[" << __FUNCTION__ << 
+                "] found directive symbol <" 
+                << std::string(this->token_buf) << ">" << std::endl;
         }
-
-
-        //if(is_hex)
-        //    std::stoi(std::string(this->token_buf), &imm, 16);
-        //else
-        //    std::stoi(std::string(this->token_buf), &imm, 10);
-        //info.imm = (uint16_t) imm;
+        if(this->token_buf[0] == '#')
+            info.imm = std::stoi(this->token_buf + 1);
+        else if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
+            info.imm = std::stoi("0" + std::string(this->token_buf));
+        else
+            info.imm = std::stoi(std::string(this->token_buf));
     }
 
     this->skipLine();
@@ -271,63 +282,195 @@ LineInfo Lexer::parseDirective(void)
     return info;
 }
 
-LineInfo Lexer::parseSymbol(void)
+/*
+ * parseLine()
+ * Parse a single line of the assembly source
+ */
+LineInfo Lexer::parseLine(void)
 {
     LineInfo info;
     Opcode o;
 
-    // TODO : move other line stuff here
     initLineInfo(info);   
-    this->op_table.get(std::string(this->token_buf), o);
-    info.opcode = o;
-    if(o.mnemonic == "M_INVALID")
+    info.line_num = this->cur_line;
+    std::cout << "[" << __FUNCTION__ << "] token_buf contains <" << 
+        std::string(this->token_buf) << ">" << std::endl;
+
+    // Could be a directive 
+    if(this->isDirective())
+    {
+        std::cout << "[" << __FUNCTION__ << "] (line " << 
+            this->cur_line << ") found directive <" << 
+            std::string(this->token_buf) << ">" << std::endl;
+        info = this->parseDirective();
         return info;
+    }
+
+
+    // Not a directive, load symbol into token_buf and
+    // check against known opcodes
+    this->readSymbol();
+    if(!this->isMnemonic())
+    {
+        // If not mnemonic then must be label
+        info.is_label = true;
+        if(std::string(this->token_buf) == "HALT")
+        {
+            if(this->verbose)
+            {
+                std::cout << "[" << __FUNCTION__ << "] got HALT (line " 
+                    << this->cur_line << ")" << std::endl;
+            }
+            return info;
+        }
+
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] (line " << 
+                this->cur_line << ") found label symbol <" 
+                << std::string(this->token_buf) << ">" << std::endl;
+        }
+
+        info.label = std::string(this->token_buf);
+        //this->advance();        // skip past the ':'
+        this->skipWhitespace();
+
+        // We may have a labelled directive
+        if(this->isDirective())
+        {
+            std::cout << "[" << __FUNCTION__ << "] (line " <<
+                this->cur_line << ") found labelled directive <" << 
+                std::string(this->token_buf) << ">" << std::endl;
+
+            LineInfo dir_info;
+            initLineInfo(dir_info);
+            dir_info = this->parseDirective();
+            info.is_directive = true;
+            info.symbol       = dir_info.symbol;
+            info.imm          = dir_info.imm;
+            info.line_num     = dir_info.line_num;
+
+            return info;
+        }
+        this->readSymbol();
+    }
+
+
 
     if(this->verbose)
     {
-        std::cout << "[" << __FUNCTION__ << "] line " << this->cur_line << 
-            " found mnemonic symbol " << std::string(this->token_buf) 
+        std::cout << "[" << __FUNCTION__ << "] (line " << this->cur_line << 
+            ") found opcode symbol " << std::string(this->token_buf) 
             << std::endl;
     }
+
+    this->op_table.get(std::string(this->token_buf), o);
+    info.opcode = o;
+    if(o.mnemonic == "M_INVALID")
+    {
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] opcode " <<
+                std::string(this->token_buf) << " not a valid opcode" << std::endl;
+        }
+        info.error = true;
+        return info;
+    }
+
 
     // TODO : How to generically parse Opcodes?  Maybe I need virtual 
     // methods here 
     switch(o.opcode)
     {
+        case LC3_BR:
+            std::cout << "[" << __FUNCTION__ << "] got BR" << std::endl;
+            std::cout << "BR Not yet implemented" << std::endl;
+            this->skipLine();
+
+            break;
         case LC3_ADD:
             // 3 args, comma seperated (DST, SR1, SR2)
             // SR2 could be imm, so look for '#' character
+            // TODO : using std::strings here might be 
+            // "slow". 
+            std::cout << "[" << __FUNCTION__ << "] got ADD" << std::endl;
             this->parseNextArg();
             std::cout << "[" << __FUNCTION__ << "] got ADD arg1 : " << std::string(this->token_buf) << std::endl;
+            //info.dest = std::stoi(this->token_buf + 1);
             this->parseNextArg();
             std::cout << "[" << __FUNCTION__ << "] got ADD arg2 : " << std::string(this->token_buf) << std::endl;
+            //info.src1 = std::stoi(this->token_buf + 1);
+            // Last arg could be imm
             this->parseNextArg();
             if(this->token_buf[0] == '#')
+            {
                 std::cout << "[" << __FUNCTION__ << "] got ADD arg3 (# immediate) : " << std::string(this->token_buf) << std::endl;
+                info.imm = std::stoi(this->token_buf + 1);
+            }
             else
+            {
                 std::cout << "[" << __FUNCTION__ << "] got ADD arg3 : " << std::string(this->token_buf) << std::endl;
+                info.imm = 0;
+            }
+            this->skipLine();
             break;
 
         case LC3_AND:
-            std::cout << "Got an AND" << std::endl;
+            std::cout << "[" << __FUNCTION__ << "] got AND" << std::endl;
+            this->parseNextArg();
+            std::cout << "[" << __FUNCTION__ << "] got AND arg1 : " << std::string(this->token_buf) << std::endl;
+            //info.dest = std::stoi(this->token_buf + 1);
+            this->parseNextArg();
+            std::cout << "[" << __FUNCTION__ << "] got AND arg2 : " << std::string(this->token_buf) << std::endl;
+            //info.src1 = std::stoi(this->token_buf + 1);
+            // Last arg could be imm
+            this->parseNextArg();
+            if(this->token_buf[0] == '#')
+            {
+                std::cout << "[" << __FUNCTION__ << "] got AND arg3 (# immediate) : " << std::string(this->token_buf) << std::endl;
+                info.imm = std::stoi(this->token_buf + 1);
+            }
+            else
+            {
+                std::cout << "[" << __FUNCTION__ << "] got AND arg3 : " << std::string(this->token_buf) << std::endl;
+                info.imm = 0;
+            }
+            this->skipLine();
             break;
-    }
 
-    return info;
-}
+        case LC3_LD:
+            std::cout << "[" << __FUNCTION__ << "] got LD" << std::endl;
+            // TODO  : implement
+            std::cout << "LD not yet implemented, skipping" << std::endl;
+            this->skipLine();
+            break;
 
-LineInfo Lexer::parseLabelSymbol(void)
-{
-    LineInfo info;
-    line_info.is_label = true;
-    line_info.line_num = this->cur_line;
-    line_info.label    = std::string(this->token_buf);
+        case LC3_LDR:
+            std::cout << "[" << __FUNCTION__ << "] got LDR" << std::endl;
+            // TODO  : implement
+            std::cout << "LDR not yet implemented, skipping" << std::endl;
+            this->skipLine();
+            break;
 
-    if(this->verbose)
-    {
-        std::cout << "[" << __FUNCTION__ << "] line " << this->cur_line << 
-            " Found label " << std::string(this->token_buf) 
-            << std::endl;
+        case LC3_LEA:
+            std::cout << "[" << __FUNCTION__ << "] got LEA" << std::endl;
+            // TODO  : implement
+            std::cout << "LEA not yet implemented, skipping" << std::endl;
+            this->skipLine();
+            break;
+
+        case LC3_STR:
+            std::cout << "[" << __FUNCTION__ << "] got STR" << std::endl;
+            // TODO  : implement
+            std::cout << "STR not yet implemented, skipping" << std::endl;
+            this->skipLine();
+            break;
+
+        //case LC3_HALT:
+        //    std::cout << "[" << __FUNCTION__ << "] got HALT" << std::endl;
+        //    this->skipLine();
+        //    break;
+
     }
 
     return info;
@@ -338,13 +481,15 @@ void Lexer::parseNextArg(void)
     unsigned int idx = 0;
     while(this->cur_char != ',')
     {
+        if(this->cur_char == '\n')
+            break;
         this->token_buf[idx] = this->cur_char;
         this->advance();
         idx++;
     }
-    // advance one character ahead
+
     this->advance();
-    this->token_buf[idx] = '\0';   // changed from idx+1
+    this->token_buf[idx] = '\0';
 }
 
 // ==== FILE LOADING
@@ -370,13 +515,12 @@ void Lexer::lex(void)
 {
     this->cur_line = 1;
     this->cur_pos  = 0;
+    LineInfo line;
 
     while(!this->exhausted())
     {
         // Skip whitespace 
-        if(this->cur_char == ' '  || 
-           this->cur_char == '\t' || 
-           this->cur_char == '\n')
+        if(this->isSpace())
         {
             this->advance();
             continue;
@@ -387,34 +531,17 @@ void Lexer::lex(void)
         {
             if(this->verbose)
                 std::cout << "Found a comment on line " << this->cur_line << std::endl;
-            this->skipComment();
+            //this->skipComment();
+            this->skipLine();
+            continue;
         }
 
-        // Check for directives
-        if(this->cur_char == '.')
+        // Check for symbols or directives
+        if(this->isSymbol() ||  this->isDirective())
         {
-            if(this->verbose)
-                std::cout << "Found a directive on line " << this->cur_line;
-            LineInfo line = this->parseDirective();
+            line = this->parseLine();
             this->source_info.add(line);
-        }
-
-        // Check for symbols
-        if(this->isSymbol())
-        {
-            this->readSymbol();
-            if(this->verbose)
-            {
-                std::cout << "[" << __FUNCTION__ << "] reading symbol <" << 
-                    std::string(this->token_buf) << 
-                    "> on line " << this->cur_line << std::endl;
-            }
-            // If not a known mnemonic, assume its a label
-            if(this->isMnemonic())
-                LineInfo line = this->parseSymbol();
-            else
-                LineInfo line = this->parseLabelSymbol();
-
+            continue;
         }
     }
 }
