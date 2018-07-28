@@ -14,6 +14,9 @@
 // Pass an opcode table for the machine to the lexer
 #include "opcode.hpp"
 
+// Largest size allowable for a token
+#define LEX_TOKEN_MAX_LEN 64
+
 // Some lexer contants
 typedef enum {
     LEX_UNK, LEX_EOF, LEX_EOL, LEX_ID, LEX_NUM, 
@@ -36,6 +39,7 @@ typedef struct{
     uint16_t     imm;
     bool         is_label;
     bool         is_directive;
+    bool         error;
 } LineInfo;
 
 void initLineInfo(LineInfo& l);
@@ -59,7 +63,6 @@ class SourceInfo
         // Add/remove lines
         void add(const LineInfo& l);
         LineInfo get(const unsigned int idx) const;
-        // FIXME: just for debug, remove later
         unsigned int getLineNum(const unsigned int idx) const;
 }; 
 
@@ -87,7 +90,7 @@ class Lexer
         void initVars(void);
 
     private:
-        //LineInfo   line_info;
+        LineInfo   line_info;       // this might go...
         SourceInfo source_info;
 
     private:
@@ -96,8 +99,8 @@ class Lexer
         bool exhausted(void) const;
         void skipWhitespace(void);
         void skipComment(void);
-        void readAlphaNum(void);    // TODO  change to read_symbol
-        bool isAlphaNum(void);
+        void readSymbol(void);
+        bool isSymbol(void);
         bool isSpace(void);
         bool isMnemonic(void);
         // TODO: may only need this during debug 
@@ -105,10 +108,10 @@ class Lexer
         
     private:
         // Symbol parse
-        Opcode parseOpcode(void);
-        uint16_t parseDest(void);
-        uint16_t parseSR1(void);
-        uint16_t parseSR2(void);
+        LineInfo parseDirective(void);
+        LineInfo parseSymbol(void);
+        LineInfo parseLabelSymbol(void);
+        void     parseNextArg(void);
 
     // Source internals 
     private:
@@ -136,6 +139,10 @@ class Lexer
         // TODO : debug, remove 
         bool isASCII(void) const;
         char dumpchar(const unsigned int idx) const;
+
+        OpcodeTable dumpOpTable(void) const;
+        unsigned int opTableSize(void) const;
+        SourceInfo  dumpSrcInfo(void) const;
 };
 
 #endif /*__LEXER_HPP*/

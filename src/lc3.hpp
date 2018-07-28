@@ -16,6 +16,10 @@
 #define LC3_ADD  0x01
 #define LC3_AND  0x05
 #define LC3_BR   0x00
+// TODO : variations with flags get constants here for now
+#define LC3_BRP  0x00
+#define LC3_BRZ  0x00
+#define LC3_BRN  0x00
 //#define LC3_JMP  0x0C
 #define LC3_JSR  0x04
 #define LC3_LD   0x02

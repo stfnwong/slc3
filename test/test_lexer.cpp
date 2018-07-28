@@ -22,6 +22,9 @@ OpcodeTable test_build_op_table(void)
         {LC3_ADD, "ADD"},
         {LC3_AND, "AND"},
         {LC3_LD,  "LD"},
+        {LC3_BR,  "BR"},
+        {LC3_LDR, "LDR"},
+        {LC3_LEA, "LEA"},
         {LC3_ST,  "ST"}
     };
     // iterate over this in the C++ way
@@ -47,11 +50,13 @@ class TestSourceInfo : public ::testing::Test
         std::string src_filename = "data/pow10.asm";
         unsigned int src_length = 617; 
         OpcodeTable op_table;
+        unsigned int expected_num_ops = 7;
 };
 
 void TestSourceInfo::SetUp(void)
 {
     this->op_table = test_build_op_table();
+    ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
 }
 
 TEST_F(TestSourceInfo, test_init)
@@ -96,11 +101,15 @@ class TestLexer : public ::testing::Test
         // needs to be updated
         unsigned int src_length = 617; 
         OpcodeTable op_table;
+        unsigned int expected_num_ops = 7;
 };
 
 void TestLexer::SetUp(void)
 {
     this->op_table = test_build_op_table();
+    ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
+    std::cout << "Generated new opcode table for lexer test" << std::endl;
+    this->op_table.print();
 }
 
 TEST_F(TestLexer, test_init)
@@ -115,8 +124,16 @@ TEST_F(TestLexer, test_init)
     ASSERT_EQ(0, l_blank.getSrcLength());
 }
 
+//TEST_F(TestLexer, test_dump_optable)
+//{
+//    Lexer l(this->op_table, this->src_file);
+//    ASSERT_EQ(this->src_length+1, l.getSrcLength());
+//    ASSERT_EQ(this->src_file, l.getFilename());
+//}
+
 TEST_F(TestLexer, test_lex_source)
 {
+    ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
     Lexer l(this->op_table, this->src_file);
     ASSERT_EQ(this->src_length+1, l.getSrcLength());
     ASSERT_EQ(this->src_file, l.getFilename());
@@ -129,6 +146,10 @@ TEST_F(TestLexer, test_lex_source)
     }
     std::cout << std::endl;
 #endif /*DUMP_SOURCE*/
+    ASSERT_EQ(this->expected_num_ops, l.opTableSize());
+    // Dump the op table and show ops 
+    std::cout << "Dumping lexer opcode table" << std::endl;
+    l.dumpOpTable();
 
     l.lex();
 }

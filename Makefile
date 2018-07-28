@@ -44,7 +44,7 @@ $(TEST_OBJECTS): $(OBJ_DIR)/%.o : $(TEST_DIR)/%.cpp
 	@echo "Compiled test object "$<""
 
 # ======== UNIT TEST TARGETS ======== #
-TESTS=test_machine test_lc3 test_mtrace test_lexer
+TESTS=test_machine test_lc3 test_mtrace test_lexer test_opcode
 
 $(TESTS): $(OBJECTS) $(TEST_OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \

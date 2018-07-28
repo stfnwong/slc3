@@ -11,7 +11,7 @@
 // Print an opcode 
 void printOpcode(const Opcode& o)
 {
-    fprintf(stdout, "%s\t: $%04X", o.mnemonic.c_str(), o.opcode);
+    //fprintf(stdout, "%s\t: $%04X", o.mnemonic.c_str(), o.opcode);
 }
 
 OpcodeTable::OpcodeTable() {} 
@@ -23,20 +23,25 @@ void OpcodeTable::add(const Opcode& o)
     this->op_list.push_back(o);
 }
 
+// TODO : something faster than linear search
+// LC3 is small enough to get away with this but may as well
+// come back and do it properly once things are working
 void OpcodeTable::get(const std::string& mnemonic, Opcode& o) const
 {
-    // TODO : something faster than linear search
-    // LC3 is small enough to get away with this but may as well
-    // come back and do it properly once things are working
     unsigned int idx;
 
-    o.opcode = 0;
-    o.mnemonic = "M_INVALID";
     for(idx = 0; idx < this->op_list.size(); idx++)
     {
         if(mnemonic == this->op_list[idx].mnemonic)
-            o = this->op_list[idx];
+        {
+            o.opcode   = this->op_list[idx].opcode;
+            o.mnemonic = this->op_list[idx].mnemonic;
+            return;
+            //o = this->op_list[idx];
+        }
     }
+    o.opcode = 0;
+    o.mnemonic = "M_INVALID";
 }
 
 void OpcodeTable::get(const uint16_t opcode, Opcode& o) const
@@ -44,13 +49,19 @@ void OpcodeTable::get(const uint16_t opcode, Opcode& o) const
     // TODO : same as above but 'search by opcode'
     unsigned int idx;
 
-    o.opcode = 0;
-    o.mnemonic = "M_INVALID";
+
     for(idx = 0; idx < this->op_list.size(); idx++)
     {
         if(opcode == this->op_list[idx].opcode)
-            o = this->op_list[idx];
+        {
+            //o = this->op_list[idx];
+            o.opcode   = this->op_list[idx].opcode;
+            o.mnemonic = this->op_list[idx].mnemonic;
+            return;
+        }
     }
+    o.opcode = 0;
+    o.mnemonic = "M_INVALID";
 }
 
 void OpcodeTable::getIdx(const unsigned int idx, Opcode& o) const
@@ -59,9 +70,24 @@ void OpcodeTable::getIdx(const unsigned int idx, Opcode& o) const
         o = this->op_list[idx];
 }
 
+void OpcodeTable::init(void)
+{
+    this->op_list.clear();
+}
+
+// Print the entire contents of the OpcodeTable to console
 void OpcodeTable::print(void) const
 {
-
+    unsigned int idx;
+    
+    fprintf(stdout, "%ld instructions in table\n", this->op_list.size());
+    for(idx = 0; idx < this->op_list.size(); idx++)
+    {
+        fprintf(stdout, "op %04d : [%s] %04X\n", 
+                idx+1, 
+                this->op_list[idx].mnemonic.c_str(), 
+                this->op_list[idx].opcode);
+    }
 }
 
 unsigned int OpcodeTable::getNumOps(void) const

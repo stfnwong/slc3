@@ -31,6 +31,7 @@ class OpcodeTable
         void get(const std::string& mnemonic, Opcode& o) const;
         void get(const uint16_t opcode, Opcode& o) const;
         void getIdx(const unsigned int idx, Opcode& o) const;
+        void init(void);
 
         // TODO: create toString() method
         void print(void) const;
