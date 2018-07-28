@@ -90,7 +90,10 @@ TEST_F(TestAssembler, test_asm_add)
 
     std::vector<uint16_t> instructions = as.getInstrs();
     for(unsigned int idx = 0; idx < instructions.size(); idx++)
+    {
+        std::cout << "[instr " << std::setw(8) << idx << "]    ";
         std::cout << std::hex << std::setw(4) << instructions[idx] << std::endl;
+    }
 
 }
 

@@ -38,7 +38,8 @@ void Assembler::asm_add(const LineInfo& line)
 {
     uint16_t instr = 0;
     if(this->verbose)
-        std::cout << "[" << __FUNCTION__ << "] assembling ADD" << std::endl;
+        std::cout << "[" << __FUNCTION__ << "] (src line " 
+            << line.line_num << ") assembling ADD" << std::endl;
     instr = (instr | this->asm_arg1(line.arg1));
     instr = (instr | this->asm_arg2(line.arg2));
     instr = (instr | this->asm_arg3(line.arg3));
@@ -70,8 +71,8 @@ void Assembler::assemble(void)
         {
             if(this->verbose)
             {
-                std::cout << "[" << __FUNCTION__ << "] (line " << 
-                    cur_line.line_num << " is directive " <<
+                std::cout << "[" << __FUNCTION__ << "] (src line " << 
+                    cur_line.line_num << ") is directive " <<
                     cur_line.symbol << std::endl;
             }
             continue;
