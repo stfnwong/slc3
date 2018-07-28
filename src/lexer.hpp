@@ -17,12 +17,6 @@
 // Largest size allowable for a token
 #define LEX_TOKEN_MAX_LEN 64
 
-// Some lexer contants
-typedef enum {
-    LEX_UNK, LEX_EOF, LEX_EOL, LEX_ID, LEX_NUM, 
-    LEX_COM, LEX_COMMA, LEX_PLUS, LEX_MINUS, LEX_STAR
-} LexSym;
-
 // NOTE: This is a LC3 specific lineinfo
 // structure. Consider generalizing in
 // future
@@ -37,6 +31,7 @@ typedef struct{
     uint16_t     src1;
     uint16_t     src2;
     uint16_t     imm;
+    bool         is_imm;
     bool         is_label;
     bool         is_directive;
     bool         error;
@@ -110,10 +105,11 @@ class Lexer
         
     private:
         // Symbol parse
+        bool     getNextArg(void);
+        void     parseOpcodeArgs(void);
         LineInfo parseDirective(void);
         LineInfo parseLine(void);
         LineInfo parseLabelSymbol(void);
-        void     parseNextArg(void);
 
     // Source internals 
     private:

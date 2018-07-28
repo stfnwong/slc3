@@ -159,16 +159,17 @@ TEST_F(TestLexer, test_lex_source)
     {
         LineInfo info = lsource.get(idx);
         std::cout << "==========================================" << std::endl;
-        std::cout << "line      : " << info.line_num << std::endl;
+        std::cout << "line      : " << std::dec << info.line_num << std::endl;
         std::cout << "addr      : " << info.addr     << std::endl;
         std::cout << "symbol    : " << info.symbol   << std::endl;
         std::cout << "label     : " << info.label    << std::endl;
         std::cout << "opcode    : " << std::hex << std::setw(4) << std::setfill('0') << info.opcode.opcode << std::endl;
         std::cout << "mnemonic  : " << info.opcode.mnemonic << std::endl;
         std::cout << "dest      : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
-        std::cout << "sr1       : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
-        std::cout << "sr2       : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
-        std::cout << "imm       : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
+        std::cout << "sr1       : " << std::hex << std::setw(4) << std::setfill('0') << info.src1 << std::endl;
+        std::cout << "sr2       : " << std::hex << std::setw(4) << std::setfill('0') << info.src2 << std::endl;
+        std::cout << "imm val   : " << std::hex << std::setw(4) << std::setfill('0') << info.imm  << std::endl;
+        std::cout << "imm       : " << info.is_imm << std::endl;
         std::cout << "label     : " << info.is_label << std::endl;
         std::cout << "directive : " << info.is_directive << std::endl;
         std::cout << "error     : " << info.error << std::endl;

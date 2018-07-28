@@ -27,6 +27,7 @@ void initLineInfo(LineInfo& l)
     l.src1     = 0;
     l.src2     = 0;
     l.imm      = 0;
+    l.is_imm   = false;
     l.is_label = false;
     l.error    = false;
     l.is_directive = false;
@@ -216,6 +217,41 @@ void Lexer::skipLine(void)
     this->advance();
 }
 
+bool Lexer::getNextArg(void)
+{
+    unsigned int idx = 0;
+    while(this->cur_char != ',')
+    {
+        if(this->cur_char == '\n')
+            break;
+        this->token_buf[idx] = this->cur_char;
+        this->advance();
+        idx++;
+    }
+
+    this->advance();
+    this->token_buf[idx] = '\0';
+    if(this->token_buf[0] == 'r' ||
+       this->token_buf[0] == 'R' || 
+       this->token_buf[0] == '#')
+    {
+        std::cout << "[" << __FUNCTION__ << "] valid arg <" <<
+            std::string(this->token_buf) << ">" << std::endl;
+        return true;
+    }
+    else
+    {
+        std::cout << "[" << __FUNCTION__ << "] invalid arg <" <<
+            std::string(this->token_buf) << ">" << std::endl;
+        return false;
+    }
+}
+
+void Lexer::parseOpcodeArgs(void)
+{
+
+}
+
 LineInfo Lexer::parseDirective(void)
 {
     LineInfo info;
@@ -360,8 +396,6 @@ LineInfo Lexer::parseLine(void)
         this->readSymbol();
     }
 
-
-
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (line " << this->cur_line << 
@@ -381,10 +415,15 @@ LineInfo Lexer::parseLine(void)
         info.error = true;
         return info;
     }
+    this->skipWhitespace();
 
 
     // TODO : How to generically parse Opcodes?  Maybe I need virtual 
     // methods here 
+    int err_argnum = 0;
+    bool arg_err = false;
+    std::string arg;
+
     switch(o.opcode)
     {
         case LC3_BR:
@@ -393,43 +432,59 @@ LineInfo Lexer::parseLine(void)
             this->skipLine();
 
             break;
+
         case LC3_ADD:
             // 3 args, comma seperated (DST, SR1, SR2)
-            // SR2 could be imm, so look for '#' character
-            // TODO : using std::strings here might be 
-            // "slow". 
             std::cout << "[" << __FUNCTION__ << "] got ADD" << std::endl;
-            this->parseNextArg();
-            std::cout << "[" << __FUNCTION__ << "] got ADD arg1 : " << std::string(this->token_buf) << std::endl;
-            //info.dest = std::stoi(this->token_buf + 1);
-            this->parseNextArg();
-            std::cout << "[" << __FUNCTION__ << "] got ADD arg2 : " << std::string(this->token_buf) << std::endl;
-            //info.src1 = std::stoi(this->token_buf + 1);
-            // Last arg could be imm
-            this->parseNextArg();
-            if(this->token_buf[0] == '#')
+
+            // Get dest
+            if(!this->getNextArg())
             {
-                std::cout << "[" << __FUNCTION__ << "] got ADD arg3 (# immediate) : " << std::string(this->token_buf) << std::endl;
-                info.imm = std::stoi(this->token_buf + 1);
+                err_argnum = 1;
+                arg_err = true;
+                goto LC3_ADD_ARG_ERR;
+            }
+            arg = std::string(this->token_buf);
+            info.dest = std::stoi(arg.substr(1, arg.length()));
+
+            // Get source 1
+            if(!this->getNextArg())
+            {
+                err_argnum = 2;
+                arg_err = true;
+                goto LC3_ADD_ARG_ERR;
+            }
+            arg = std::string(this->token_buf);
+            info.src1 = std::stoi(arg.substr(1, arg.length()));
+
+            // Get source 2
+            if(!this->getNextArg())
+            {
+                err_argnum = 3;
+                arg_err = true;
+                goto LC3_ADD_ARG_ERR;
+            }
+            arg = std::string(this->token_buf);
+            if(arg[0] == '#')
+            {
+                info.imm = std::stoi(arg.substr(1, arg.length()));
+                info.is_imm = true;
             }
             else
-            {
-                std::cout << "[" << __FUNCTION__ << "] got ADD arg3 : " << std::string(this->token_buf) << std::endl;
-                info.imm = 0;
-            }
-            this->skipLine();
+                info.src2 = std::stoi(arg.substr(1, arg.length()));
+
             break;
 
         case LC3_AND:
             std::cout << "[" << __FUNCTION__ << "] got AND" << std::endl;
-            this->parseNextArg();
+            this->getNextArg();
             std::cout << "[" << __FUNCTION__ << "] got AND arg1 : " << std::string(this->token_buf) << std::endl;
             //info.dest = std::stoi(this->token_buf + 1);
-            this->parseNextArg();
+            this->getNextArg();
             std::cout << "[" << __FUNCTION__ << "] got AND arg2 : " << std::string(this->token_buf) << std::endl;
             //info.src1 = std::stoi(this->token_buf + 1);
             // Last arg could be imm
-            this->parseNextArg();
+            this->getNextArg();
             if(this->token_buf[0] == '#')
             {
                 std::cout << "[" << __FUNCTION__ << "] got AND arg3 (# immediate) : " << std::string(this->token_buf) << std::endl;
@@ -471,51 +526,31 @@ LineInfo Lexer::parseLine(void)
             this->skipLine();
             break;
 
-        //case LC3_HALT:
-        //    std::cout << "[" << __FUNCTION__ << "] got HALT" << std::endl;
-        //    this->skipLine();
-        //    break;
+            // Handle argument parsing
+LC3_ADD_ARG_ERR:
+            if(arg_err)
+            {
+                std::cout << "[" << __FUNCTION__ << "] (line " <<
+                    this->cur_line << ") error parsing arg " <<
+                    err_argnum << " of ADD opcode" << std::endl;
+                info.error = true;
+                this->skipLine();
+            }
+            break;
+
+        default:
+            std::cout << "[" << __FUNCTION__ << "] invalid opoode <" 
+                << std::hex << o.opcode << std::endl;
+            break;
 
     }
 
     return info;
 }
 
-void Lexer::parseNextArg(void)
-{
-    unsigned int idx = 0;
-    while(this->cur_char != ',')
-    {
-        if(this->cur_char == '\n')
-            break;
-        this->token_buf[idx] = this->cur_char;
-        this->advance();
-        idx++;
-    }
 
-    this->advance();
-    this->token_buf[idx] = '\0';
-}
 
-// ==== FILE LOADING
-void Lexer::loadFile(const std::string& filename)
-{
-    std::ifstream infile(filename);
-    std::string line;
-
-    // save the filename
-    this->filename = filename;
-    while(std::getline(infile, line))
-    {
-        this->src += line;
-        this->src.push_back('\n');
-    }
-
-    infile.close();
-    this->src.push_back('\0');
-    this->cur_char = this->src[0];
-}
-
+// Do lexing pass
 void Lexer::lex(void)
 {
     this->cur_line = 1;
@@ -549,6 +584,25 @@ void Lexer::lex(void)
             continue;
         }
     }
+}
+
+// ==== FILE LOADING
+void Lexer::loadFile(const std::string& filename)
+{
+    std::ifstream infile(filename);
+    std::string line;
+
+    // save the filename
+    this->filename = filename;
+    while(std::getline(infile, line))
+    {
+        this->src += line;
+        this->src.push_back('\n');
+    }
+
+    infile.close();
+    this->src.push_back('\0');
+    this->cur_char = this->src[0];
 }
 
 // ==== Getters 
