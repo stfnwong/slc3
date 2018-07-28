@@ -349,9 +349,10 @@ void Lexer::parseDirective(void)
 
     // Try to read the arg (if any)
     this->skipWhitespace();
-    if(this->isSymbol())
+    if(this->getNextArg())
     {
-        this->readSymbol();
+        std::string arg(this->token_buf);
+        //this->readSymbol();
         if(this->verbose)
         {
             std::cout << "[" << __FUNCTION__ << 
@@ -359,17 +360,15 @@ void Lexer::parseDirective(void)
                 << std::string(this->token_buf) << ">" << std::endl;
         }
         if(this->token_buf[0] == '#')
-            this->line_info.imm = std::stoi(this->token_buf + 1);
+            this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
         else if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
-            this->line_info.imm = std::stoi("0" + std::string(this->token_buf));
+            this->line_info.imm = std::stoi("0" + arg.substr(1, arg.length()));
         else
-            this->line_info.imm = std::stoi(std::string(this->token_buf));
+            this->line_info.imm = std::stoi(arg);
 
         std::cout << "[" << __FUNCTION__ << "] set imm to <" <<
             this->line_info.imm << ">" << std::endl;
     }
-
-    this->skipLine();
 }
 
 /*
