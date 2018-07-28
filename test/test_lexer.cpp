@@ -14,7 +14,7 @@
 #include "lc3.hpp"      // for op_table helper function
 
 //#define DUMP_SOURCE
-#define TEST_NUM_OPS 10
+#define TEST_NUM_OPS 11
 
 // Helper function to build op table for testing lexer
 OpcodeTable test_build_op_table(void)
@@ -27,6 +27,7 @@ OpcodeTable test_build_op_table(void)
         {LC3_LDR, "LDR"},
         {LC3_LEA, "LEA"},
         {LC3_ST,  "ST"},
+        {LC3_STR, "STR"},
         {LC3_NOT, "NOT"},
         // BR and variants 
         {LC3_BR,  "BR"},
@@ -174,9 +175,9 @@ TEST_F(TestLexer, test_lex_source)
             std::cout << "z";
         std::cout << std::endl;
         std::cout << "mnemonic  : " << info.opcode.mnemonic << std::endl;
-        std::cout << "dest      : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
-        std::cout << "sr1       : " << std::hex << std::setw(4) << std::setfill('0') << info.src1 << std::endl;
-        std::cout << "sr2       : " << std::hex << std::setw(4) << std::setfill('0') << info.src2 << std::endl;
+        std::cout << "arg1      : " << std::hex << std::setw(4) << std::setfill('0') << info.arg1 << std::endl;
+        std::cout << "arg2      : " << std::hex << std::setw(4) << std::setfill('0') << info.arg2 << std::endl;
+        std::cout << "arg3      : " << std::hex << std::setw(4) << std::setfill('0') << info.arg3 << std::endl;
         std::cout << "imm val   : " << std::hex << std::setw(4) << std::setfill('0') << info.imm  << std::endl;
         std::cout << "imm       : " << info.is_imm << std::endl;
         std::cout << "label     : " << info.is_label << std::endl;

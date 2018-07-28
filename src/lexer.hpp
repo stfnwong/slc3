@@ -30,9 +30,9 @@ typedef struct{
     unsigned int line_num;
     unsigned int addr;
     uint8_t      flags;
-    uint16_t     dest;
-    uint16_t     src1;
-    uint16_t     src2;
+    uint16_t     arg1;
+    uint16_t     arg2;
+    uint16_t     arg3;
     uint16_t     imm;
     bool         is_imm;
     bool         is_label;
@@ -43,10 +43,10 @@ typedef struct{
 void initLineInfo(LineInfo& l);
 
 // Assembler directives 
-const char LEX_ORIG[] = ".ORIG";
-const char LEX_END[]  = ".END";
-const char LEX_BLKW[] = ".BLKW";
-const char LEX_FILL[] = ".FILL";
+const char LEX_ORIG[]    = ".ORIG";
+const char LEX_END[]     = ".END";
+const char LEX_BLKW[]    = ".BLKW";
+const char LEX_FILL[]    = ".FILL";
 const char LEX_STRINGZ[] = ".STRINGZ";
 const char LEX_INVALID[] = ".INVALID";
 

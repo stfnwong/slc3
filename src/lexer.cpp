@@ -23,9 +23,9 @@ void initLineInfo(LineInfo& l)
     l.symbol   = "\0";
     l.label    = "\0";
     l.opcode   = {0x0, "DEFAULT"},
-    l.dest     = 0;
-    l.src1     = 0;
-    l.src2     = 0;
+    l.arg1     = 0;
+    l.arg2     = 0;
+    l.arg3     = 0;
     l.imm      = 0;
     l.flags    = 0;
     l.is_imm   = false;
@@ -239,7 +239,9 @@ bool Lexer::getNextArg(void)
     this->token_buf[idx] = '\0';
     if(this->token_buf[0] == 'r' ||
        this->token_buf[0] == 'R' || 
-       this->token_buf[0] == '#')
+       this->token_buf[0] == '#' ||
+       this->token_buf[0] == 'x' ||
+       this->token_buf[0] == 'X')
     {
         std::cout << "[" << __FUNCTION__ << "] valid arg <" <<
             std::string(this->token_buf) << ">" << std::endl;
@@ -258,7 +260,7 @@ void Lexer::parseOpcodeArgs(void)
     int err_argnum = 0;
     bool arg_err = false;
     std::string arg;
-    // Get dest
+    // Get arg1
     if(!this->getNextArg())
     {
         err_argnum = 1;
@@ -266,7 +268,7 @@ void Lexer::parseOpcodeArgs(void)
         goto ARG_ERR;
     }
     arg = std::string(this->token_buf);
-    this->line_info.dest = std::stoi(arg.substr(1, arg.length()));
+    this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
 
     // Get source 1
     if(!this->getNextArg())
@@ -276,7 +278,7 @@ void Lexer::parseOpcodeArgs(void)
         goto ARG_ERR;
     }
     arg = std::string(this->token_buf);
-    this->line_info.src1 = std::stoi(arg.substr(1, arg.length()));
+    this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
 
     // Get source 2
     if(!this->getNextArg())
@@ -292,7 +294,7 @@ void Lexer::parseOpcodeArgs(void)
         this->line_info.is_imm = true;
     }
     else
-        this->line_info.src2 = std::stoi(arg.substr(1, arg.length()));
+        this->line_info.arg3 = std::stoi(arg.substr(1, arg.length()));
 
 ARG_ERR:
     if(arg_err)
@@ -459,13 +461,14 @@ void Lexer::parseLine(void)
 
     // TODO : How to generically parse Opcodes?  Maybe I need virtual 
     // methods here 
+    if(this->verbose)
+        std::cout << "[" << __FUNCTION__ << "] decoding <" 
+            << o.mnemonic << ">" << std::endl;
     
     std::string arg;
     switch(o.opcode)
     {
         case LC3_BR:
-            std::cout << "[" << __FUNCTION__ << "] got BR" << std::endl;
-            std::cout << "BR Not yet implemented" << std::endl;
 
             // Check what (if any) flags are in opcode
             if(this->line_info.opcode.mnemonic.length() > 2)
@@ -485,31 +488,41 @@ void Lexer::parseLine(void)
                         this->line_info.flags |= LC3_FLAG_Z;
                 }
             }
+            // There should be either an immediate or a label symbol;
+            if(this->getNextArg())      // assume literal
+            {
+                arg = std::string(this->token_buf);
+                if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
+                    this->line_info.addr = std::stoi("0" + std::string(this->token_buf));
+                else
+                    this->line_info.addr = std::stoi(std::string(this->token_buf));
+            }
+            else        // assume label symbol
+                this->line_info.symbol = std::string(this->token_buf);
+
             this->skipLine();
 
             break;
 
         case LC3_ADD:
             // 3 args, comma seperated (DST, SR1, SR2)
-            std::cout << "[" << __FUNCTION__ << "] got ADD" << std::endl;
             this->parseOpcodeArgs();
             break;
 
         case LC3_AND:
-            std::cout << "[" << __FUNCTION__ << "] got AND" << std::endl;
+            // 3 args, comma seperated (DST, SR1, SR2)
             this->parseOpcodeArgs();
             this->skipLine();
             break;
 
         case LC3_LD:
-            std::cout << "[" << __FUNCTION__ << "] got LD" << std::endl;
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
                 break;
             }
             arg = std::string(this->token_buf);
-            this->line_info.dest = std::stoi(arg.substr(1, arg.length()));
+            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
             // Next could be a symbol
             if(this->isNumber())
             {
@@ -519,41 +532,107 @@ void Lexer::parseLine(void)
             else
             {
                 this->readSymbol();
-                this->line_info.label = std::string(this->token_buf);
-                this->line_info.is_label = false;
+                this->line_info.symbol = std::string(this->token_buf);
             }
             this->skipLine();
             break;
 
+        case LC3_LDI:
+
+            break;
+
         case LC3_LDR:
-            std::cout << "[" << __FUNCTION__ << "] got LDR" << std::endl;
-            // TODO  : implement
-            std::cout << "LDR not yet implemented, skipping" << std::endl;
+            // Get arg1 register 
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
+            // Get base register 
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
+
+            // Get offset6, which must be a literal
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
+            this->line_info.is_imm = true;      // redundant?
+            
             this->skipLine();
             break;
 
         case LC3_LEA:
-            std::cout << "[" << __FUNCTION__ << "] got LEA" << std::endl;
-            // TODO  : implement
-            std::cout << "LEA not yet implemented, skipping" << std::endl;
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
+            // Next could be a symbol
+            if(this->isNumber())
+            {
+                this->readSymbol();
+                this->line_info.addr = std::stoi(std::string(this->token_buf));
+            }
+            else
+            {
+                this->readSymbol();
+                this->line_info.symbol = std::string(this->token_buf);
+            }
+
             this->skipLine();
             break;
 
+
+        case LC3_ST:
         case LC3_STR:
-            std::cout << "[" << __FUNCTION__ << "] got STR" << std::endl;
-            // TODO  : implement
-            std::cout << "STR not yet implemented, skipping" << std::endl;
+            // Get src register 
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
+            // Get base register 
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
+
+            // Get offset6, which must be a literal
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
+            this->line_info.is_imm = true;      // redundant?
+            
+
             this->skipLine();
             break;
-
-            // Handle argument parsing
-
 
         default:
             std::cout << "[" << __FUNCTION__ << "] invalid opoode <" 
                 << std::hex << o.opcode << std::endl;
             break;
-
     }
 }
 
