@@ -223,6 +223,7 @@ LineInfo Lexer::parseDirective(void)
     initLineInfo(info);
     info.is_directive = true;
     info.line_num     = this->cur_line;
+    info.opcode.mnemonic     = "DIRECTIVE";
     this->readSymbol();
 
     // Note: these symbols are also LC3 assembly specific, 
@@ -275,6 +276,9 @@ LineInfo Lexer::parseDirective(void)
             info.imm = std::stoi("0" + std::string(this->token_buf));
         else
             info.imm = std::stoi(std::string(this->token_buf));
+
+        std::cout << "[" << __FUNCTION__ << "] set imm to <" <<
+            info.imm << ">" << std::endl;
     }
 
     this->skipLine();
@@ -349,6 +353,7 @@ LineInfo Lexer::parseLine(void)
             info.symbol       = dir_info.symbol;
             info.imm          = dir_info.imm;
             info.line_num     = dir_info.line_num;
+            info.opcode       = dir_info.opcode;
 
             return info;
         }
