@@ -164,6 +164,15 @@ TEST_F(TestLexer, test_lex_source)
         std::cout << "symbol    : " << info.symbol   << std::endl;
         std::cout << "label     : " << info.label    << std::endl;
         std::cout << "opcode    : " << std::hex << std::setw(4) << std::setfill('0') << info.opcode.opcode << std::endl;
+        //std::cout << "flags     : " << std::hex << std::setw(2) << info.flags << std::endl;
+        std::cout << "flags     : ";
+        if(info.flags & LC3_FLAG_P)
+            std::cout << "p";
+        if(info.flags & LC3_FLAG_N)
+            std::cout << "n";
+        if(info.flags & LC3_FLAG_Z)
+            std::cout << "z";
+        std::cout << std::endl;
         std::cout << "mnemonic  : " << info.opcode.mnemonic << std::endl;
         std::cout << "dest      : " << std::hex << std::setw(4) << std::setfill('0') << info.dest << std::endl;
         std::cout << "sr1       : " << std::hex << std::setw(4) << std::setfill('0') << info.src1 << std::endl;

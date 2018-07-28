@@ -16,17 +16,20 @@
 
 // Largest size allowable for a token
 #define LEX_TOKEN_MAX_LEN 64
+#define LC3_FLAG_P 0x01
+#define LC3_FLAG_N 0x02
+#define LC3_FLAG_Z 0x04
 
 // NOTE: This is a LC3 specific lineinfo
 // structure. Consider generalizing in
 // future
 typedef struct{
-    unsigned int line_num;
-    unsigned int addr;
     std::string  symbol;     //char* symbol // <- faster?;
     std::string  label;     //char* label // <- faster?;
-    // Opcode / Operand info
     Opcode       opcode;
+    unsigned int line_num;
+    unsigned int addr;
+    uint8_t      flags;
     uint16_t     dest;
     uint16_t     src1;
     uint16_t     src2;
@@ -98,6 +101,7 @@ class Lexer
         void skipComment(void);
         void readSymbol(void);
         bool isSymbol(void) const;
+        bool isNumber(void) const;
         bool isDirective(void) const;
         bool isSpace(void);
         bool isMnemonic(void);
@@ -105,11 +109,10 @@ class Lexer
         
     private:
         // Symbol parse
-        bool     getNextArg(void);
-        void     parseOpcodeArgs(void);
-        LineInfo parseDirective(void);
-        LineInfo parseLine(void);
-        LineInfo parseLabelSymbol(void);
+        bool getNextArg(void);
+        void parseOpcodeArgs(void);
+        void parseDirective(void);
+        void parseLine(void);
 
     // Source internals 
     private:
