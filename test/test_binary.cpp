@@ -71,13 +71,13 @@ void TestBinary::SetUp(void)
 // Basic init test 
 TEST_F(TestBinary, test_init)
 {
-    AsmBin asm_bin;
+    AsmProg asm_bin;
     ASSERT_EQ(0, asm_bin.getNumInstr());
 }
 
 TEST_F(TestBinary, test_write)
 {
-    // Prepare an AsmBin object
+    // Prepare an AsmProg object
     Lexer lexer(this->op_table, this->asm_src_filename);
     lexer.setVerbose(false);
     this->source_info = lexer.lex();
@@ -87,7 +87,7 @@ TEST_F(TestBinary, test_write)
 
     // Write binary to disk
     int status;
-    AsmBin prog = as.getProgram();
+    AsmProg prog = as.getProgram();
     prog.setVerbose(true);
     status = prog.write(this->bin_output_filename);
     ASSERT_EQ(0, status);
@@ -95,7 +95,7 @@ TEST_F(TestBinary, test_write)
 
 TEST_F(TestBinary, test_read)
 {
-    // Prepare an AsmBin object
+    // Prepare an AsmProg object
     Lexer lexer(this->op_table, this->asm_src_filename);
     lexer.setVerbose(false);
     this->source_info = lexer.lex();
@@ -105,14 +105,14 @@ TEST_F(TestBinary, test_read)
 
     // Write binary to disk
     int status;
-    AsmBin prog = as.getProgram();
+    AsmProg prog = as.getProgram();
     prog.setVerbose(true);
     status = prog.write(this->bin_output_filename);
     ASSERT_EQ(0, status);
 
     // Read into new object, compare 
     // object members 
-    AsmBin read_prog;
+    AsmProg read_prog;
     read_prog.setVerbose(true);
     read_prog.read(this->bin_output_filename);
 

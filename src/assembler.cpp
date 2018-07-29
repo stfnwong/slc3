@@ -149,6 +149,23 @@ void Assembler::asm_lea(const LineInfo& line)
     this->program.add(instr);
 }
 
+void Assembler::asm_str(const LineInfo& line)
+{
+    Instr instr;
+    if(this->verbose)
+    {
+        std::cout << "[" << __FUNCTION__ << "] (src line " 
+            << line.line_num << ") assembling STR" << std::endl;
+    }
+    instr.ins = (instr.ins | (line.opcode.opcode << 12));
+    instr.ins = (instr.ins | this->asm_arg1(line.arg1));
+    instr.ins = (instr.ins | this->asm_arg2(line.arg2));
+    instr.ins = (instr.ins | this->asm_of6(line.imm));
+    instr.adr = line.addr;
+
+    this->program.add(instr);
+}
+
 
 // Go through the SourceInfo and update addresses
 void Assembler::resolveLabels(void)
@@ -219,8 +236,9 @@ void Assembler::assemble(void)
                 this->asm_ldr(cur_line);
                 break;
             case LC3_STR:
-                std::cout << "Got STR (line " << 
-                    cur_line.line_num << "), not implemented" << std::endl;
+                this->asm_str(cur_line);
+                //std::cout << "Got STR (line " << 
+                //    cur_line.line_num << "), not implemented" << std::endl;
                 break;
             default:
                 std::cout << "[" << __FUNCTION__ <<
@@ -239,7 +257,7 @@ unsigned int Assembler::getNumErr(void) const
     return this->num_err;
 }
 
-AsmBin Assembler::getProgram(void) const
+AsmProg Assembler::getProgram(void) const
 {
     return this->program;
 }

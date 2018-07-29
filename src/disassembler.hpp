@@ -14,14 +14,14 @@
 /*
  * Disassembler
  *
- * Transforms an AsmBin object into its correponding
+ * Transforms an AsmProg object into its correponding
  * SourceInfo object
  */ 
 class Disassembler
 {
     private:
         bool       verbose;
-        AsmBin     program;
+        AsmProg    program;
         SourceInfo source;
         LineInfo   cur_line;
 

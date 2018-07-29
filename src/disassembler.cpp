@@ -173,7 +173,8 @@ void Disassembler::disassemble(void)
         {
             std::cout << "[" << __FUNCTION__ << 
                 "] Error disassembling instruction " << 
-                i+1 << "/" << this->program.getNumInstr() << std::endl;
+                std::dec << i+1 << "/" << 
+                std::dec << this->program.getNumInstr() << std::endl;
         }
         this->source.add(this->cur_line);
     }

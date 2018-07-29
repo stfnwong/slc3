@@ -26,7 +26,7 @@ class Assembler
 
     private:
         SourceInfo src_info;
-        AsmBin     program;
+        AsmProg     program;
 
     private:
         inline uint16_t asm_arg1(const uint16_t arg);
@@ -41,6 +41,7 @@ class Assembler
         void asm_ld(const LineInfo& line);
         void asm_ldr(const LineInfo& line);
         void asm_lea(const LineInfo& line);
+        void asm_str(const LineInfo& line);
 
     private:
         void resolveLabels(void);
@@ -51,7 +52,7 @@ class Assembler
 
         void assemble(void);
         unsigned int getNumErr(void) const;
-        AsmBin getProgram(void) const;
+        AsmProg getProgram(void) const;
         std::vector<Instr> getInstrs(void) const;
         
         void setVerbose(const bool v);

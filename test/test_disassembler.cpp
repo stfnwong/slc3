@@ -89,7 +89,7 @@ TEST_F(TestDisassembler, test_dis_file)
     as.assemble();
 
     // Write binary to disk
-    AsmBin prog = as.getProgram();
+    AsmProg prog = as.getProgram();
     prog.setVerbose(true);
     status = prog.write(this->bin_output_filename);
     ASSERT_EQ(0, status);

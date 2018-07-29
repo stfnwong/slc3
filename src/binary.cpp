@@ -8,34 +8,34 @@
 #include <fstream>
 #include "binary.hpp"
 
-AsmBin::AsmBin()
+AsmProg::AsmProg()
 {
     this->verbose = false;
 }
 
-AsmBin::~AsmBin() {} 
+AsmProg::~AsmProg() {} 
 
-AsmBin::AsmBin(const AsmBin& that)
+AsmProg::AsmProg(const AsmProg& that)
 {
     this->instructions = that.instructions;
 }
 
-void AsmBin::add(const Instr& i)
+void AsmProg::add(const Instr& i)
 {
     this->instructions.push_back(i);
 }
 
-unsigned int AsmBin::getNumInstr(void) const
+unsigned int AsmProg::getNumInstr(void) const
 {
     return this->instructions.size();
 }
 
-std::vector<Instr> AsmBin::getInstr(void) const
+std::vector<Instr> AsmProg::getInstr(void) const
 {
     return this->instructions;
 }
 
-Instr AsmBin::getInstr(const unsigned int idx) const
+Instr AsmProg::getInstr(const unsigned int idx) const
 {
     unsigned int num_ins = this->instructions.size();
     return this->instructions[idx % num_ins];
@@ -51,7 +51,7 @@ Instr AsmBin::getInstr(const unsigned int idx) const
  *
  */
 
-int AsmBin::read(const std::string& filename)
+int AsmProg::read(const std::string& filename)
 {
     unsigned int idx;
     uint16_t num_records;
@@ -88,7 +88,7 @@ int AsmBin::read(const std::string& filename)
     return 0;
 }
 
-int AsmBin::write(const std::string& filename)
+int AsmProg::write(const std::string& filename)
 {
     uint16_t N;
     std::ofstream outfile;
@@ -135,12 +135,12 @@ int AsmBin::write(const std::string& filename)
     return 0;
 }
 
-void AsmBin::setVerbose(const bool v)
+void AsmProg::setVerbose(const bool v)
 {
     this->verbose = v;
 }
 
-bool AsmBin::getVerbose(void) const
+bool AsmProg::getVerbose(void) const
 {
     return this->verbose;
 }

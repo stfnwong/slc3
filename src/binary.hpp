@@ -18,16 +18,16 @@ typedef struct
     uint16_t ins;
 } Instr;
 
-class AsmBin
+class AsmProg
 {
     private:
         bool verbose;
         std::vector<Instr> instructions;
         
     public:
-        AsmBin();
-        ~AsmBin();
-        AsmBin(const AsmBin& that);
+        AsmProg();
+        ~AsmProg();
+        AsmProg(const AsmProg& that);
 
         void add(const Instr& i);
         std::vector<Instr> getInstr(void) const;

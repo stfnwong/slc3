@@ -90,7 +90,7 @@ TEST_F(TestAssembler, test_asm_add)
     ASSERT_EQ(0, as.getNumErr());
     as.assemble();
 
-    AsmBin prog = as.getProgram();
+    AsmProg prog = as.getProgram();
     std::vector<Instr> instructions = as.getInstrs();
     std::cout << " N     ADDR   DATA " << std::endl;
     for(unsigned int idx = 0; idx < instructions.size(); idx++)
