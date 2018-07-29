@@ -5,7 +5,7 @@
  */
 
 #ifndef __DISASSEM_H
-#define __DIASSEM_H
+#define __DISASSEM_H
 
 static inline int check_imm(uint16_t instr)
 {

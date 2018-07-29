@@ -583,7 +583,6 @@ LINE_END:
     this->cur_addr++;
 }
 
-
 // Do lexing pass
 SourceInfo Lexer::lex(void)
 {

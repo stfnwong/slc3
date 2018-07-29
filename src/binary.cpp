@@ -35,6 +35,12 @@ std::vector<Instr> AsmBin::getInstr(void) const
     return this->instructions;
 }
 
+Instr AsmBin::getInstr(const unsigned int idx) const
+{
+    unsigned int num_ins = this->instructions.size();
+    return this->instructions[idx % num_ins];
+}
+
 
 /*
  * ASMBIN BINARY FORMAT

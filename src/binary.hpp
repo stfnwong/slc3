@@ -31,6 +31,7 @@ class AsmBin
 
         void add(const Instr& i);
         std::vector<Instr> getInstr(void) const;
+        Instr getInstr(const unsigned int idx) const;
 
         unsigned int getNumInstr(void) const;
         int read(const std::string& filename);

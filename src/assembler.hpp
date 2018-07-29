@@ -32,11 +32,18 @@ class Assembler
         inline uint16_t asm_arg1(const uint16_t arg);
         inline uint16_t asm_arg2(const uint16_t arg);
         inline uint16_t asm_arg3(const uint16_t arg);
+        inline uint16_t asm_of6(const uint16_t arg);
+        inline uint16_t asm_pc9(const uint16_t arg);
         // Assembly of instructions 
         void asm_add(const LineInfo& line);
         void asm_and(const LineInfo& line);
         void asm_br(const LineInfo& line);
+        void asm_ld(const LineInfo& line);
+        void asm_ldr(const LineInfo& line);
+        void asm_lea(const LineInfo& line);
 
+    private:
+        void resolveLabels(void);
 
     public:
         Assembler(const SourceInfo& si);
