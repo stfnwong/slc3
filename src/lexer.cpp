@@ -232,6 +232,187 @@ ARG_ERR:
     }
 }
 
+void Lexer::parseOpcode(const Opcode& o)
+{
+    // TODO : How to generically parse Opcodes?  Maybe I need virtual 
+    // methods here 
+    if(this->verbose)
+        std::cout << "[" << __FUNCTION__ << "] decoding <" 
+            << o.mnemonic << ">" << std::endl;
+    
+    std::string arg;
+    switch(o.opcode)
+    {
+        case LC3_BR:
+
+            // Check what (if any) flags are in opcode
+            if(this->line_info.opcode.mnemonic.length() > 2)
+            {
+                unsigned int num_flags;
+                num_flags = this->line_info.opcode.mnemonic.length() - 2;
+                if(this->verbose)
+                {
+                    std::cout << "[" << __FUNCTION__ << "] BR has " << 
+                        num_flags << " flag arguments" << std::endl;
+                }
+
+                for(unsigned int f = 0; f < num_flags; f++)
+                {
+                    if(this->line_info.opcode.mnemonic[f + 2] == 'p')
+                        this->line_info.flags |= LC3_FLAG_P;
+                    if(this->line_info.opcode.mnemonic[f + 2] == 'n')
+                        this->line_info.flags |= LC3_FLAG_N;
+                    if(this->line_info.opcode.mnemonic[f + 2] == 'z')
+                        this->line_info.flags |= LC3_FLAG_Z;
+                }
+            }
+            // There should be either an immediate or a label symbol;
+            if(this->getNextArg())      // assume literal
+            {
+                arg = std::string(this->token_buf);
+                if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
+                    this->line_info.imm = std::stoi("0" + std::string(this->token_buf));
+                else
+                    this->line_info.imm = std::stoi(std::string(this->token_buf));
+            }
+            else        // assume label symbol
+                this->line_info.symbol = std::string(this->token_buf);
+
+            this->skipLine();
+            break;
+
+        case LC3_ADD:
+            // 3 args, comma seperated (DST, SR1, SR2)
+            this->parseOpcodeArgs();
+            break;
+
+        case LC3_AND:
+            // 3 args, comma seperated (DST, SR1, SR2)
+            this->parseOpcodeArgs();
+            this->skipLine();
+            break;
+
+        case LC3_LD:
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
+            // Next could be a symbol
+            if(this->isNumber())
+            {
+                this->readSymbol();
+                this->line_info.imm = std::stoi(std::string(this->token_buf));
+            }
+            else
+            {
+                this->readSymbol();
+                this->line_info.symbol = std::string(this->token_buf);
+            }
+            this->skipLine();
+            break;
+
+        case LC3_LDI:
+
+            break;
+
+        case LC3_LDR:
+            // Get arg1 register 
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
+            // Get base register 
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
+
+            // Get offset6, which must be a literal
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
+            this->line_info.is_imm = true;      // redundant?
+            
+            this->skipLine();
+            break;
+
+        case LC3_LEA:
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
+            // Next could be a symbol
+            if(this->isNumber())
+            {
+                this->readSymbol();
+                this->line_info.imm = std::stoi(std::string(this->token_buf));
+            }
+            else
+            {
+                this->readSymbol();
+                this->line_info.symbol = std::string(this->token_buf);
+            }
+
+            this->skipLine();
+            break;
+
+        case LC3_ST:
+        case LC3_STR:
+            // Get src register 
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
+            // Get base register 
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
+
+            // Get offset6, which must be a literal
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
+            this->line_info.is_imm = true;      // redundant?
+
+            this->skipLine();
+            break;
+
+        default:
+            std::cout << "[" << __FUNCTION__ << "] invalid opoode <" 
+                << std::hex << o.opcode << std::endl;
+            break;
+    }
+
+}
+
+
 void Lexer::parseDirective(void)
 {
     this->line_info.is_directive = true;
@@ -296,6 +477,13 @@ void Lexer::parseDirective(void)
             std::cout << "[" << __FUNCTION__ << "] set imm to <" <<
                 this->line_info.imm << ">" << std::endl;
         }
+
+        // If we got am .ORIG directive, set the internal
+        // address counter 
+        if(this->line_info.symbol == LEX_ORIG)
+        {
+            this->cur_addr = this->line_info.imm;
+        }
     }
 }
 
@@ -305,6 +493,8 @@ void Lexer::parseDirective(void)
  */
 void Lexer::parseLine(void)
 {
+    // TODO ; may need a GOTO to a block which
+    // increments this->cur_addr
     Opcode o;
 
     initLineInfo(this->line_info);   
@@ -319,7 +509,7 @@ void Lexer::parseLine(void)
                 std::string(this->token_buf) << ">" << std::endl;
         }
         this->parseDirective();
-        return;
+        goto LINE_END;
     }
 
     // Not a directive, load symbol into token_buf and
@@ -337,7 +527,7 @@ void Lexer::parseLine(void)
                     << this->cur_line << ")" << std::endl;
             }
             this->line_info.opcode.mnemonic = "HALT";
-            return;
+            goto LINE_END;
         }
 
         if(this->verbose)
@@ -361,7 +551,7 @@ void Lexer::parseLine(void)
                     std::string(this->token_buf) << ">" << std::endl;
             }
             this->parseDirective();
-            return;
+            goto LINE_END;
         }
         this->readSymbol();
     }
@@ -383,187 +573,14 @@ void Lexer::parseLine(void)
                 std::string(this->token_buf) << " not a valid opcode" << std::endl;
         }
         this->line_info.error = true;
-        return;
+        goto LINE_END;
     }
     this->skipWhitespace();
+    this->parseOpcode(o);
 
-    // TODO : How to generically parse Opcodes?  Maybe I need virtual 
-    // methods here 
-    if(this->verbose)
-        std::cout << "[" << __FUNCTION__ << "] decoding <" 
-            << o.mnemonic << ">" << std::endl;
-    
-    std::string arg;
-    switch(o.opcode)
-    {
-        case LC3_BR:
-
-            // Check what (if any) flags are in opcode
-            if(this->line_info.opcode.mnemonic.length() > 2)
-            {
-                unsigned int num_flags;
-                num_flags = this->line_info.opcode.mnemonic.length() - 2;
-                if(this->verbose)
-                {
-                    std::cout << "[" << __FUNCTION__ << "] BR has " << 
-                        num_flags << " flag arguments" << std::endl;
-                }
-
-                for(unsigned int f = 0; f < num_flags; f++)
-                {
-                    if(this->line_info.opcode.mnemonic[f + 2] == 'p')
-                        this->line_info.flags |= LC3_FLAG_P;
-                    if(this->line_info.opcode.mnemonic[f + 2] == 'n')
-                        this->line_info.flags |= LC3_FLAG_N;
-                    if(this->line_info.opcode.mnemonic[f + 2] == 'z')
-                        this->line_info.flags |= LC3_FLAG_Z;
-                }
-            }
-            // There should be either an immediate or a label symbol;
-            if(this->getNextArg())      // assume literal
-            {
-                arg = std::string(this->token_buf);
-                if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
-                    this->line_info.addr = std::stoi("0" + std::string(this->token_buf));
-                else
-                    this->line_info.addr = std::stoi(std::string(this->token_buf));
-            }
-            else        // assume label symbol
-                this->line_info.symbol = std::string(this->token_buf);
-
-            this->skipLine();
-
-            break;
-
-        case LC3_ADD:
-            // 3 args, comma seperated (DST, SR1, SR2)
-            this->parseOpcodeArgs();
-            break;
-
-        case LC3_AND:
-            // 3 args, comma seperated (DST, SR1, SR2)
-            this->parseOpcodeArgs();
-            this->skipLine();
-            break;
-
-        case LC3_LD:
-            if(!this->getNextArg())
-            {
-                this->line_info.error = true;
-                break;
-            }
-            arg = std::string(this->token_buf);
-            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
-            // Next could be a symbol
-            if(this->isNumber())
-            {
-                this->readSymbol();
-                this->line_info.addr = std::stoi(std::string(this->token_buf));
-            }
-            else
-            {
-                this->readSymbol();
-                this->line_info.symbol = std::string(this->token_buf);
-            }
-            this->skipLine();
-            break;
-
-        case LC3_LDI:
-
-            break;
-
-        case LC3_LDR:
-            // Get arg1 register 
-            if(!this->getNextArg())
-            {
-                this->line_info.error = true;
-                break;
-            }
-            arg = std::string(this->token_buf);
-            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
-            // Get base register 
-            if(!this->getNextArg())
-            {
-                this->line_info.error = true;
-                break;
-            }
-            arg = std::string(this->token_buf);
-            this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
-
-            // Get offset6, which must be a literal
-            if(!this->getNextArg())
-            {
-                this->line_info.error = true;
-                break;
-            }
-            arg = std::string(this->token_buf);
-            this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
-            this->line_info.is_imm = true;      // redundant?
-            
-            this->skipLine();
-            break;
-
-        case LC3_LEA:
-            if(!this->getNextArg())
-            {
-                this->line_info.error = true;
-                break;
-            }
-            arg = std::string(this->token_buf);
-            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
-            // Next could be a symbol
-            if(this->isNumber())
-            {
-                this->readSymbol();
-                this->line_info.addr = std::stoi(std::string(this->token_buf));
-            }
-            else
-            {
-                this->readSymbol();
-                this->line_info.symbol = std::string(this->token_buf);
-            }
-
-            this->skipLine();
-            break;
-
-        case LC3_ST:
-        case LC3_STR:
-            // Get src register 
-            if(!this->getNextArg())
-            {
-                this->line_info.error = true;
-                break;
-            }
-            arg = std::string(this->token_buf);
-            this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
-            // Get base register 
-            if(!this->getNextArg())
-            {
-                this->line_info.error = true;
-                break;
-            }
-            arg = std::string(this->token_buf);
-            this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
-
-            // Get offset6, which must be a literal
-            if(!this->getNextArg())
-            {
-                this->line_info.error = true;
-                break;
-            }
-            arg = std::string(this->token_buf);
-            this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
-            this->line_info.is_imm = true;      // redundant?
-            
-
-            this->skipLine();
-            break;
-
-        default:
-            std::cout << "[" << __FUNCTION__ << "] invalid opoode <" 
-                << std::hex << o.opcode << std::endl;
-            break;
-    }
+LINE_END:
+    this->line_info.addr = this->cur_addr;
+    this->cur_addr++;
 }
 
 
@@ -572,6 +589,7 @@ SourceInfo Lexer::lex(void)
 {
     this->cur_line = 1;
     this->cur_pos  = 0;
+    this->cur_addr = 0;
 
     while(!this->exhausted())
     {

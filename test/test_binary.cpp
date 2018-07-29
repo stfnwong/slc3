@@ -1,9 +1,8 @@
-/* TEST_ASSEMBLER 
- * Some basic test for the Assembler object 
+/* TEST_BINARY
+ * Test the objects for dealing with LC3 binaries
  *
  * Stefan Wong 2018
- * */
-
+ */
 #include <vector>
 #include <iostream>
 #include <iomanip>
@@ -44,69 +43,97 @@ OpcodeTable test_build_op_table(void)
     return op_table;
 }
 
-class TestAssembler : public ::testing::Test
+
+class TestBinary : public ::testing::Test
 {
     protected:
-        TestAssembler() {}
-        virtual ~TestAssembler() {}
+        TestBinary() {}
+        virtual ~TestBinary() {}
         virtual void SetUp(void);
-        virtual void TearDown() {}
+        virtual void TearDown(void) {}
         bool verbose = false;       // set to true for additional output 
         // Parameters for machine under test 
         uint16_t mem_size = 4096;
-        std::string src_filename = "data/pow10.asm";
+        std::string asm_src_filename = "data/pow10.asm";
+        std::string bin_output_filename = "data/test_asm_output.bin";
         unsigned int src_length = 617; 
         OpcodeTable op_table;
         unsigned int expected_num_ops = TEST_NUM_OPS;
-
         SourceInfo source_info;
 };
 
-void TestAssembler::SetUp(void)
+void TestBinary::SetUp(void)
 {
     this->op_table = test_build_op_table();
     ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
 }
 
-TEST_F(TestAssembler, test_init)
+// Basic init test 
+TEST_F(TestBinary, test_init)
 {
-    Lexer lexer(this->op_table, this->src_filename);
-    this->source_info = lexer.lex();
-    Assembler as(this->source_info);
-    as.setVerbose(true);
-
-    ASSERT_EQ(0, as.getNumErr());
+    AsmBin asm_bin;
+    ASSERT_EQ(0, asm_bin.getNumInstr());
 }
 
-TEST_F(TestAssembler, test_asm_add)
+TEST_F(TestBinary, test_write)
 {
-    // TODO: narrow the scope of this unit test
-    Lexer lexer(this->op_table, this->src_filename);
+    // Prepare an AsmBin object
+    Lexer lexer(this->op_table, this->asm_src_filename);
     lexer.setVerbose(false);
     this->source_info = lexer.lex();
     Assembler as(this->source_info);
-    as.setVerbose(true);
-
-    ASSERT_EQ(0, as.getNumErr());
+    as.setVerbose(false);
     as.assemble();
 
+    // Write binary to disk
+    int status;
     AsmBin prog = as.getProgram();
-    std::vector<Instr> instructions = as.getInstrs();
-    std::cout << " N     ADDR   DATA " << std::endl;
-    for(unsigned int idx = 0; idx < instructions.size(); idx++)
+    prog.setVerbose(true);
+    status = prog.write(this->bin_output_filename);
+    ASSERT_EQ(0, status);
+}
+
+TEST_F(TestBinary, test_read)
+{
+    // Prepare an AsmBin object
+    Lexer lexer(this->op_table, this->asm_src_filename);
+    lexer.setVerbose(false);
+    this->source_info = lexer.lex();
+    Assembler as(this->source_info);
+    as.setVerbose(false);
+    as.assemble();
+
+    // Write binary to disk
+    int status;
+    AsmBin prog = as.getProgram();
+    prog.setVerbose(true);
+    status = prog.write(this->bin_output_filename);
+    ASSERT_EQ(0, status);
+
+    // Read into new object, compare 
+    // object members 
+    AsmBin read_prog;
+    read_prog.setVerbose(true);
+    read_prog.read(this->bin_output_filename);
+
+    ASSERT_EQ(prog.getNumInstr(), read_prog.getNumInstr());
+    std::vector<Instr> instr_write;
+    std::vector<Instr> instr_read;
+
+    instr_write = prog.getInstr();
+    instr_read  = read_prog.getInstr();
+    ASSERT_EQ(instr_write.size(), instr_read.size());
+
+    for(unsigned idx = 0; idx < instr_write.size(); ++idx)
     {
-        std::cout << "[" << std::dec << std::setw(4) << std::setfill('0') << idx << "]";
-        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].adr;
-        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].ins;
-        std::cout << std::endl;
-        //std::cout << "[instr " << std::setw(8) << idx << "]    ";;
-        //std::cout << std::hex << std::setw(4) << instructions[idx] << std::endl;
+        ASSERT_EQ(instr_write[idx].adr, instr_read[idx].adr);
+        ASSERT_EQ(instr_write[idx].ins, instr_read[idx].ins);
     }
 }
+
 
 int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
-        //s
 }

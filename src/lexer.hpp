@@ -48,6 +48,7 @@ class Lexer
     private:
         LineInfo   line_info;       // this might go...
         SourceInfo source_info;
+        unsigned int cur_addr;
 
     private:
         // Source movement
@@ -67,6 +68,7 @@ class Lexer
         // Symbol parse
         bool getNextArg(void);
         void parseOpcodeArgs(void);
+        void parseOpcode(const Opcode& o);
         void parseDirective(void);
         void parseLine(void);
 

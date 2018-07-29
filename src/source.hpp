@@ -12,8 +12,8 @@
 #include "opcode.hpp"
 
 #define LC3_FLAG_P 0x01
-#define LC3_FLAG_N 0x02
-#define LC3_FLAG_Z 0x04
+#define LC3_FLAG_Z 0x02
+#define LC3_FLAG_N 0x04
 
 // NOTE: This is a LC3 specific lineinfo
 // structure. Consider generalizing in
@@ -51,6 +51,8 @@ class SourceInfo
         unsigned int getLineNum(const unsigned int idx) const;
         unsigned int getNumLines(void) const;
         unsigned int getNumError(void) const;
+        unsigned int numInstance(const uint16_t& op) const;
+        unsigned int numInstance(const std::string& m) const;
 
         // Save/load data
         int write(const std::string& filename);

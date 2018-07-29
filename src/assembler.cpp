@@ -36,20 +36,54 @@ inline uint16_t Assembler::asm_arg3(const uint16_t arg)
 // Instruction assembly
 void Assembler::asm_add(const LineInfo& line)
 {
-    uint16_t instr = 0;
+    Instr instr;
     if(this->verbose)
         std::cout << "[" << __FUNCTION__ << "] (src line " 
             << line.line_num << ") assembling ADD" << std::endl;
-    instr = (instr | this->asm_arg1(line.arg1));
-    instr = (instr | this->asm_arg2(line.arg2));
-    instr = (instr | this->asm_arg3(line.arg3));
+    instr.ins = (instr.ins | this->asm_arg1(line.arg1));
+    instr.ins = (instr.ins | this->asm_arg2(line.arg2));
+    instr.ins = (instr.ins | this->asm_arg3(line.arg3));
     if(line.is_imm)
-        instr = (instr | (1 << 5));
-    instr  = (instr | (line.opcode.opcode << 12));
+        instr.ins = (instr.ins | (1 << 5));
+    instr.ins  = (instr.ins | (line.opcode.opcode << 12));
+    // TODO : proper address resolution
+    instr.adr = line.addr;
 
-    this->instrs.push_back(instr);
+    this->program.add(instr);
 }
 
+void Assembler::asm_and(const LineInfo& line)
+{
+    Instr instr;
+    if(this->verbose)
+        std::cout << "[" << __FUNCTION__ << "] (src line " 
+            << line.line_num << ") assembling AND" << std::endl;
+    instr.ins = (instr.ins | (line.opcode.opcode << 12));
+    instr.ins = (instr.ins| this->asm_arg1(line.arg1));
+    instr.ins = (instr.ins| this->asm_arg2(line.arg2));
+    instr.ins = (instr.ins | this->asm_arg3(line.arg3));
+    if(line.is_imm)
+        instr.ins = (instr.ins | (1 << 5));
+    // TODO : proper address resolution
+    instr.adr = line.addr;
+
+    this->program.add(instr);
+}
+
+void Assembler::asm_br(const LineInfo& line)
+{
+    Instr instr;
+    if(this->verbose)
+        std::cout << "[" << __FUNCTION__ << "] (src line " 
+            << line.line_num << ") assembling BR" << std::endl;
+    instr.ins = (instr.ins | (line.opcode.opcode << 12));
+    instr.ins = (instr.ins | (line.flags << 9));
+    instr.ins = (instr.ins | (line.imm & 0x01FF));
+    // TODO : proper address resolution
+    instr.adr = line.addr;
+
+    this->program.add(instr);
+}
 
 void Assembler::assemble(void)
 {
@@ -78,12 +112,15 @@ void Assembler::assemble(void)
             continue;
         }
 
-
         // Handle opcodes 
         switch(cur_line.opcode.opcode)
         {
             case LC3_ADD:
                 this->asm_add(cur_line);
+            case LC3_AND:
+                this->asm_and(cur_line);
+            case LC3_BR:
+                this->asm_br(cur_line);
         }
     }
 }
@@ -93,18 +130,26 @@ unsigned int Assembler::getNumErr(void) const
     return this->num_err;
 }
 
-std::vector<uint16_t> Assembler::getInstrs(void) const
+AsmBin Assembler::getProgram(void) const
 {
-    return this->instrs;
+    return this->program;
 }
+
+std::vector<Instr> Assembler::getInstrs(void) const
+{
+    return this->program.getInstr();
+}
+
+
 
 void Assembler::setVerbose(const bool v)
 {
     this->verbose = v;
 }
 
-
 bool Assembler::getVerbose(void) const
 {
     return this->verbose;
 }
+
+

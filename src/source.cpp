@@ -73,11 +73,55 @@ unsigned int SourceInfo::getNumError(void) const
     return num_err;
 }
 
+/*
+ * numInstance() 
+ * 
+ * Returns the number of times a particular opcode appears in
+ * the source info.
+ */
+unsigned int SourceInfo::numInstance(const uint16_t& op) const
+{
+    unsigned int n = 0;
+    unsigned int idx;
+
+    for(idx = 0; idx < this->line_info.size(); idx++)
+    {
+        if(this->line_info[idx].opcode.opcode == op)
+            n++;
+    }
+
+    return n;
+}
+
+/*
+ * numInstance() 
+ * 
+ * Returns the number of times a particular mnemonic appears in
+ * the source info.
+ */
+unsigned int SourceInfo::numInstance(const std::string& m) const
+{
+    unsigned int n = 0;
+    unsigned int idx;
+
+    for(idx = 0; idx < this->line_info.size(); idx++)
+    {
+        if(this->line_info[idx].opcode.mnemonic == m)
+            n++;
+    }
+
+    return n;
+}
+
 
 // Save/load data 
+// TODO : may need a serialization library here 
 int SourceInfo::write(const std::string& filename)
 {
     int status = 0;
+    //uint32_t num_records, sym_len, label_len;
+
+    //num_records = this->line_info.size();
 
     return status;
 }

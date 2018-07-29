@@ -184,6 +184,18 @@ TEST_F(TestLexer, test_lex_source)
         std::cout << "directive : " << info.is_directive << std::endl;
         std::cout << "error     : " << info.error << std::endl;
     }
+
+    // TODO: test that this is correct - need a known good sourceinfo to compare against
+    unsigned int num_ops;
+    std::cout << "Opcodes by frequency: " << std::endl;
+    for(unsigned int n = 0; n < this->op_table.getNumOps(); n++)
+    {
+        Opcode op;
+        this->op_table.get(n, op);
+        num_ops = lsource.numInstance(op.opcode);
+        std::cout << "[" << std::hex << std::setw(4) << op.opcode 
+            << "] (" << op.mnemonic << ") - " << num_ops << std::endl;
+    }
 }
 
 int main(int argc, char *argv[])

@@ -1,8 +1,8 @@
-/* TEST_ASSEMBLER 
- * Some basic test for the Assembler object 
+/* TEST_SOURCEINFO
+ * Unit tests for SourceInfo object
  *
  * Stefan Wong 2018
- * */
+ */
 
 #include <vector>
 #include <iostream>
@@ -11,11 +11,10 @@
 #include <string>
 #include <gtest/gtest.h>
 // Modules under test 
-#include "assembler.hpp"
+#include "source.hpp"
 #include "lexer.hpp"
 #include "lc3.hpp"      // for op_table helper function
 #include "source.hpp"
-#include "binary.hpp"
 
 #define TEST_NUM_OPS 11
 
@@ -44,11 +43,11 @@ OpcodeTable test_build_op_table(void)
     return op_table;
 }
 
-class TestAssembler : public ::testing::Test
+class TestSourceInfo : public ::testing::Test
 {
     protected:
-        TestAssembler() {}
-        virtual ~TestAssembler() {}
+        TestSourceInfo() {}
+        virtual ~TestSourceInfo() {}
         virtual void SetUp(void);
         virtual void TearDown() {}
         bool verbose = false;       // set to true for additional output 
@@ -62,51 +61,21 @@ class TestAssembler : public ::testing::Test
         SourceInfo source_info;
 };
 
-void TestAssembler::SetUp(void)
+void TestSourceInfo::SetUp(void)
 {
     this->op_table = test_build_op_table();
     ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
 }
 
-TEST_F(TestAssembler, test_init)
+TEST_F(TestSourceInfo, test_init)
 {
-    Lexer lexer(this->op_table, this->src_filename);
-    this->source_info = lexer.lex();
-    Assembler as(this->source_info);
-    as.setVerbose(true);
-
-    ASSERT_EQ(0, as.getNumErr());
+    SourceInfo si;
+    ASSERT_EQ(0, si.getNumLines());
 }
 
-TEST_F(TestAssembler, test_asm_add)
-{
-    // TODO: narrow the scope of this unit test
-    Lexer lexer(this->op_table, this->src_filename);
-    lexer.setVerbose(false);
-    this->source_info = lexer.lex();
-    Assembler as(this->source_info);
-    as.setVerbose(true);
-
-    ASSERT_EQ(0, as.getNumErr());
-    as.assemble();
-
-    AsmBin prog = as.getProgram();
-    std::vector<Instr> instructions = as.getInstrs();
-    std::cout << " N     ADDR   DATA " << std::endl;
-    for(unsigned int idx = 0; idx < instructions.size(); idx++)
-    {
-        std::cout << "[" << std::dec << std::setw(4) << std::setfill('0') << idx << "]";
-        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].adr;
-        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].ins;
-        std::cout << std::endl;
-        //std::cout << "[instr " << std::setw(8) << idx << "]    ";;
-        //std::cout << std::hex << std::setw(4) << instructions[idx] << std::endl;
-    }
-}
 
 int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
-        //s
 }
