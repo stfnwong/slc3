@@ -166,6 +166,24 @@ void Assembler::asm_str(const LineInfo& line)
     this->program.add(instr);
 }
 
+void Assembler::asm_sti(const LineInfo& line)
+{
+    Instr instr;
+    if(this->verbose)
+    {
+        std::cout << "[" << __FUNCTION__ << "] (src line " 
+            << line.line_num << ") assembling STI" << std::endl;
+    }
+    instr.ins = (instr.ins | (line.opcode.opcode << 12));
+    instr.ins = (instr.ins | this->asm_arg1(line.arg1));
+    instr.ins = (instr.ins | this->asm_arg2(line.arg2));
+    instr.ins = (instr.ins | this->asm_of6(line.imm));
+    instr.adr = line.addr;
+
+    this->program.add(instr);
+}
+
+
 
 // Go through the SourceInfo and update addresses
 void Assembler::resolveLabels(void)
@@ -237,8 +255,6 @@ void Assembler::assemble(void)
                 break;
             case LC3_STR:
                 this->asm_str(cur_line);
-                //std::cout << "Got STR (line " << 
-                //    cur_line.line_num << "), not implemented" << std::endl;
                 break;
             default:
                 std::cout << "[" << __FUNCTION__ <<
@@ -267,8 +283,6 @@ std::vector<Instr> Assembler::getInstrs(void) const
     return this->program.getInstr();
 }
 
-
-
 void Assembler::setVerbose(const bool v)
 {
     this->verbose = v;
@@ -279,4 +293,7 @@ bool Assembler::getVerbose(void) const
     return this->verbose;
 }
 
-
+int Assembler::write(const std::string& filename)
+{
+    return this->program.write(filename);
+}

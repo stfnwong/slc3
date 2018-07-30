@@ -119,6 +119,12 @@ int Disassembler::disInstr(const Instr& instr)
 
             break;
 
+        case LC3_LEA:
+            this->cur_line.arg1 = this->dis_op1(instr.ins);
+            this->cur_line.imm  = this->dis_pc9(instr.ins);
+
+            break;
+
         case LC3_LD:
             this->cur_line.arg1 = this->dis_op1(instr.ins); 
             this->cur_line.imm  = this->dis_pc9(instr.ins);

@@ -42,6 +42,10 @@ class Assembler
         void asm_ldr(const LineInfo& line);
         void asm_lea(const LineInfo& line);
         void asm_str(const LineInfo& line);
+        void asm_sti(const LineInfo& line);
+
+    private:
+        // Handle directives
 
     private:
         void resolveLabels(void);
@@ -57,6 +61,8 @@ class Assembler
         
         void setVerbose(const bool v);
         bool getVerbose(void) const;
+
+        int write(const std::string& filename);
 
 };
 
