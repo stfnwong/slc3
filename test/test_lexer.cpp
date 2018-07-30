@@ -43,55 +43,6 @@ OpcodeTable test_build_op_table(void)
 }
 
 /*
- * TEST_SOURCE_INFO
- */
-class TestSourceInfo : public ::testing::Test
-{
-    protected:
-        TestSourceInfo() {}
-        virtual ~TestSourceInfo() {}
-        virtual void SetUp(void);
-        virtual void TearDown() {}
-        bool verbose = false;       // set to true for additional output 
-        // Parameters for machine under test 
-        uint16_t mem_size = 4096;
-        std::string src_filename = "data/pow10.asm";
-        unsigned int src_length = 617; 
-        OpcodeTable op_table;
-        unsigned int expected_num_ops = TEST_NUM_OPS;
-};
-
-void TestSourceInfo::SetUp(void)
-{
-    this->op_table = test_build_op_table();
-    ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
-}
-
-TEST_F(TestSourceInfo, test_init)
-{
-    unsigned int line_num = 0;
-    SourceInfo si;
-
-    // Read some lines from the source file 
-    std::string src_text;
-    std::ifstream infile(this->src_filename);
-    std::string line;
-
-    while(std::getline(infile, line))
-    {
-        line_num++;
-        src_text += line;
-        src_text.push_back('\n');
-        // May as well process each line here 
-        LineInfo li;
-        li.line_num = line_num;
-        si.add(li);
-    }
-
-    infile.close();
-}
-
-/*
  * TEST_LEXER
  */
 class TestLexer : public ::testing::Test
@@ -104,7 +55,7 @@ class TestLexer : public ::testing::Test
         bool verbose = false;       // set to true for additional output 
         // Parameters for machine under test 
         uint16_t mem_size = 4096;
-        std::string src_file = "data/pow10.asm";
+        std::string src_file = "data/pow_10.asm";
         // Note - if the source gets modified then this value
         // needs to be updated
         unsigned int src_length = 617; 
@@ -136,8 +87,6 @@ TEST_F(TestLexer, test_lex_source)
 {
     ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
     Lexer l(this->op_table, this->src_file);
-    ASSERT_EQ(this->src_length+1, l.getSrcLength());
-    ASSERT_EQ(this->src_file, l.getFilename());
 
     ASSERT_EQ(true, l.isASCII());
 #ifdef DUMP_SOURCE
