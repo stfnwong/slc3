@@ -168,6 +168,7 @@ void Disassembler::disassemble(void)
     for(i = 0; i < this->program.getNumInstr(); ++i)
     {
         instr = this->program.getInstr(i);
+        // TODO : look up mnemonic
         status = this->disInstr(instr);
         if(status < 0)
         {

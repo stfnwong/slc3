@@ -159,30 +159,7 @@ TEST_F(TestLexer, test_lex_source)
     for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
     {
         LineInfo info = lsource.get(idx);
-        std::cout << "==========================================" << std::endl;
-        std::cout << "line      : " << std::dec << info.line_num << std::endl;
-        std::cout << "addr      : " << info.addr     << std::endl;
-        std::cout << "symbol    : " << info.symbol   << std::endl;
-        std::cout << "label     : " << info.label    << std::endl;
-        std::cout << "opcode    : " << std::hex << std::setw(4) << std::setfill('0') << info.opcode.opcode << std::endl;
-        //std::cout << "flags     : " << std::hex << std::setw(2) << info.flags << std::endl;
-        std::cout << "flags     : ";
-        if(info.flags & LC3_FLAG_P)
-            std::cout << "p";
-        if(info.flags & LC3_FLAG_N)
-            std::cout << "n";
-        if(info.flags & LC3_FLAG_Z)
-            std::cout << "z";
-        std::cout << std::endl;
-        std::cout << "mnemonic  : " << info.opcode.mnemonic << std::endl;
-        std::cout << "arg1      : " << std::hex << std::setw(4) << std::setfill('0') << info.arg1 << std::endl;
-        std::cout << "arg2      : " << std::hex << std::setw(4) << std::setfill('0') << info.arg2 << std::endl;
-        std::cout << "arg3      : " << std::hex << std::setw(4) << std::setfill('0') << info.arg3 << std::endl;
-        std::cout << "imm val   : " << std::hex << std::setw(4) << std::setfill('0') << info.imm  << std::endl;
-        std::cout << "imm       : " << info.is_imm << std::endl;
-        std::cout << "label     : " << info.is_label << std::endl;
-        std::cout << "directive : " << info.is_directive << std::endl;
-        std::cout << "error     : " << info.error << std::endl;
+        printLineInfo(info);
     }
 
     // TODO: test that this is correct - need a known good sourceinfo to compare against

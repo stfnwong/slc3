@@ -101,6 +101,15 @@ TEST_F(TestDisassembler, test_dis_file)
     ASSERT_EQ(0, status);
     std::cout << "Disassembling" << std::endl;
     dis.disassemble();
+
+    // Get the resulting SourceInfo and display
+    SourceInfo dsource = dis.getSourceInfo();
+    for(unsigned int idx = 0; idx < dsource.getNumLines(); ++idx)
+    {
+        LineInfo info = dsource.get(idx);
+        printLineInfo(info);
+    }
+
 }
 
 int main(int argc, char *argv[])

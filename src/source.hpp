@@ -36,6 +36,7 @@ typedef struct{
 } LineInfo;
 
 void initLineInfo(LineInfo& l);
+void printLineInfo(const LineInfo& l);
 
 class SourceInfo
 {
