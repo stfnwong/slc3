@@ -106,10 +106,8 @@ TEST_F(TestDisassembler, test_dis_file)
     SourceInfo dsource = dis.getSourceInfo();
     for(unsigned int idx = 0; idx < dsource.getNumLines(); ++idx)
     {
-        LineInfo info = dsource.get(idx);
-        printLineInfo(info);
+        dsource.printLine(idx);
     }
-
 }
 
 int main(int argc, char *argv[])

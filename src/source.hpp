@@ -15,6 +15,29 @@
 #define LC3_FLAG_Z 0x02
 #define LC3_FLAG_N 0x04
 
+typedef struct 
+{
+    uint16_t addr;
+    std::string label;
+}Symbol;
+
+class SymbolTable
+{
+    private:
+        std::vector<Symbol> syms;
+    public:
+        SymbolTable();
+        ~SymbolTable();
+        void add(const Symbol& s);
+        void update(const unsigned int idx, const Symbol& s);
+        Symbol get(const unsigned int idx) const;
+        uint16_t getAddr(const std::string& label) const;
+        void init(void);
+        unsigned int getNumSyms(void) const;
+        // debug 
+        void dump(void);
+};
+
 // NOTE: This is a LC3 specific lineinfo
 // structure. Consider generalizing in
 // future
@@ -37,17 +60,20 @@ typedef struct{
 
 void initLineInfo(LineInfo& l);
 void printLineInfo(const LineInfo& l);
+void printHorzLineInfo(const LineInfo& l);
 
 class SourceInfo
 {
     private:
         std::vector <LineInfo> line_info;
+        std::string line_to_string(const LineInfo& l);
         
     public:
         SourceInfo();
         ~SourceInfo();
         // Add/remove lines
         void add(const LineInfo& l);
+        void update(const unsigned int idx, const LineInfo& l);
         LineInfo get(const unsigned int idx) const;
         unsigned int getLineNum(const unsigned int idx) const;
         unsigned int getNumLines(void) const;
@@ -58,6 +84,9 @@ class SourceInfo
         // Save/load data
         int write(const std::string& filename);
         int read(const std::string& filename);
+
+        // String / display 
+        void printLine(const unsigned int idx);
 }; 
 
 

@@ -183,26 +183,6 @@ void Assembler::asm_sti(const LineInfo& line)
     this->program.add(instr);
 }
 
-
-
-// Go through the SourceInfo and update addresses
-void Assembler::resolveLabels(void)
-{
-    if(this->src_info.getNumLines() == 0)
-        return;
-
-    unsigned int idx;
-    LineInfo line;
-    for(idx = 0; idx < this->src_info.getNumLines(); ++idx)
-    {
-        line = this->src_info.get(idx);
-        if(line.label !=  "\0")
-        {
-            // find the label in the source info
-        }
-    }
-}
-
 void Assembler::assemble(void)
 {
     LineInfo cur_line;

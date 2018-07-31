@@ -47,9 +47,6 @@ class Assembler
     private:
         // Handle directives
 
-    private:
-        void resolveLabels(void);
-
     public:
         Assembler(const SourceInfo& si);
         ~Assembler();

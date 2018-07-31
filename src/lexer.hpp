@@ -15,9 +15,9 @@
 #include "opcode.hpp"
 #include "source.hpp"
 
+#define LEX_DEBUG 
 // Largest size allowable for a token
 #define LEX_TOKEN_MAX_LEN 64
-
 
 // Assembler directives 
 const char LEX_ORIG[]    = ".ORIG";
@@ -26,7 +26,6 @@ const char LEX_BLKW[]    = ".BLKW";
 const char LEX_FILL[]    = ".FILL";
 const char LEX_STRINGZ[] = ".STRINGZ";
 const char LEX_INVALID[] = ".INVALID";
-
 
 // TODO: for now we just lex for LC3, but maybe we pass
 // a machine object here and extract the correct symbol/address
@@ -74,7 +73,9 @@ class Lexer
 
     // Source internals 
     private:
+        SymbolTable sym_table;
         unsigned int cur_line;
+        void resolveLabels(void);
     public:
         // Lexing function
         SourceInfo lex(void);
@@ -94,14 +95,15 @@ class Lexer
 
         void setVerbose(const bool b);
         bool getVerbose(void) const;
-
-        // TODO : debug, remove 
-        bool isASCII(void) const;
-        char dumpchar(const unsigned int idx) const;
-
+        // Dump internal info - remove 
         OpcodeTable dumpOpTable(void) const;
         unsigned int opTableSize(void) const;
         SourceInfo  dumpSrcInfo(void) const;
+        SymbolTable dumpSymTable(void) const;
+#ifdef LEX_DEBUG 
+        bool isASCII(void) const;
+        char dumpchar(const unsigned int idx) const;
+#endif /*LEX_DEBUG*/
 };
 
 #endif /*__LEXER_HPP*/
