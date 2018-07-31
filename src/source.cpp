@@ -40,17 +40,10 @@ uint16_t SymbolTable::getAddr(const std::string& s) const
     uint16_t addr;
     unsigned int idx;
 
-    std::cout << "Looking for sym " << s << std::endl;
-    
     for(idx = 0; idx < this->syms.size(); idx++)
     {
         if(s == this->syms[idx].label)
-        {
-            std::cout << "Found at index " << idx << std::endl;
-            //addr = this->syms[idx].addr;
-            //break;
             return this->syms[idx].addr;
-        }
     }
     addr = 0;
 
@@ -144,23 +137,7 @@ SourceInfo::~SourceInfo() {}
  */
 std::string SourceInfo::line_to_string(const LineInfo& l)
 {
-    /*
-     * Line  (0000)  [ild]
-     * Sym SSSSSSSS  Label LLLLLLLLLLLLLLLLLLL
-     * Opcode  flags  arg1  arg2  arg3  imm  
-     */
     std::ostringstream oss;
-    //oss << "Line  " << std::dec << std::setw(4) << std::setfill('0') << l.line_num << "  ";
-    //oss << "Addr  0x" << std::hex << std::setw(4) << std::setfill('0') << l.addr;
-    //oss << "  [";
-    //if(l.is_imm)
-    //    oss << "i";
-    //if(l.is_label)
-    //    oss << "l";
-    //if(l.is_directive)
-    //    oss << "d";
-    //oss << "]" << std::endl;
-    // TODO : colour codes
 
     oss << "---------------------------------------------------------------------" << std::endl;
     oss << "Line    Type   Addr  Mnemonic    Opcode  flags   arg1  arg2  arg3  imm  " << std::endl;
@@ -183,6 +160,7 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
     oss << std::left << "0x" << std::hex << std::setw(4) << std::setfill('0') << l.addr << " ";
     oss << std::left << std::setw(12) << std::setfill(' ') << l.opcode.mnemonic;
     oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << l.opcode.opcode << "   ";
+    // Insert flag chars
     if(l.flags & LC3_FLAG_P)
         oss << "p";
     else
@@ -195,9 +173,7 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
         oss << "z";
     else
         oss << ".";
-    //oss << (l.flags & LC3_FLAG_P) ? "p" : " ";
-    //oss << (l.flags & LC3_FLAG_N) ? "n" : " ";
-    //oss << (l.flags & LC3_FLAG_Z) ? "z" : " ";
+    // Insert args
     oss << "  ";
     oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.arg1;
     oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.arg2;

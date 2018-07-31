@@ -109,7 +109,6 @@ TEST_F(TestLexer, test_lex_source)
     for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
     {
         lsource.printLine(idx);
-        //std::cout << "--------------------------------" << std::endl;
     }
 
     // TODO: test that this is correct - need a known good sourceinfo to compare against
@@ -134,7 +133,6 @@ TEST_F(TestLexer, test_lex_source)
         std::cout << std::left << std::setw(12) << std::setfill(' ') << 
             sym.label << " : 0x" << std::hex << std::setfill('0') << sym.addr << std::endl;
     }
-
 }
 
 int main(int argc, char *argv[])

@@ -278,7 +278,6 @@ void Lexer::parseOpcode(const Opcode& o)
             else        // assume label symbol
                 this->line_info.symbol = std::string(this->token_buf);
 
-            //this->skipLine();
             break;
 
         case LC3_ADD:
@@ -289,7 +288,6 @@ void Lexer::parseOpcode(const Opcode& o)
         case LC3_AND:
             // 3 args, comma seperated (DST, SR1, SR2)
             this->parseOpcodeArgs();
-            //this->skipLine();
             break;
 
         case LC3_LD:
@@ -311,7 +309,6 @@ void Lexer::parseOpcode(const Opcode& o)
                 this->readSymbol();
                 this->line_info.symbol = std::string(this->token_buf);
             }
-            //this->skipLine();
             break;
 
         case LC3_LDI:
@@ -346,7 +343,6 @@ void Lexer::parseOpcode(const Opcode& o)
             this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
             this->line_info.is_imm = true;      // redundant?
             
-            //this->skipLine();
             break;
 
         case LC3_LEA:
@@ -369,7 +365,6 @@ void Lexer::parseOpcode(const Opcode& o)
                 this->line_info.symbol = std::string(this->token_buf);
             }
 
-            //this->skipLine();
             break;
 
         case LC3_ST:
@@ -401,7 +396,6 @@ void Lexer::parseOpcode(const Opcode& o)
             this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
             this->line_info.is_imm = true;      // redundant?
 
-            //this->skipLine();
             break;
 
         default:
@@ -544,8 +538,6 @@ void Lexer::parseLine(void)
         std::string sym_label = std::string(this->token_buf);
         while(!isalnum(toupper(sym_label[sym_label.length()-1])))
             sym_label.pop_back();
-        //if(sym_label[sym_label.length()-1] == ':')
-        //    sym_label.pop_back();
         s.label = sym_label;
         s.addr  = this->cur_addr;
         std::cout << "s.label [" << s.label <<  "] s.addr : " << std::hex << s.addr << std::endl;
@@ -651,7 +643,6 @@ SourceInfo Lexer::lex(void)
         {
             if(this->verbose)
                 std::cout << "Found a comment on line " << this->cur_line << std::endl;
-            //this->skipComment();
             this->skipLine();
             continue;
         }
