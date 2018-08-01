@@ -24,7 +24,7 @@ LC3::~LC3()
 
 void LC3::allocMem(void)
 {
-    this->mem = new uint8_t[this->mem_size];
+    this->mem = new uint16_t[this->mem_size];
 }
 
 
@@ -123,12 +123,12 @@ void LC3::resetMem(void)
         this->mem[i] = 0;
 }
 
-void LC3::writeMem(const uint16_t adr, const uint8_t val)
+void LC3::writeMem(const uint16_t adr, const uint16_t val)
 {
     this->mem[adr % this->mem_size] = val;
 }
 
-uint8_t LC3::readMem(const uint16_t adr) const
+uint16_t LC3::readMem(const uint16_t adr) const
 {
     return this->mem[adr % this->mem_size];
 }
@@ -144,7 +144,7 @@ int LC3::loadMemFile(const std::string& filename, int offset)
     infile.seekg(0, std::ios::beg);
 
     try{
-        infile.read((char*) &this->mem[offset], sizeof(uint8_t) * num_bytes);
+        infile.read((char*) &this->mem[offset], sizeof(uint16_t) * num_bytes);
     }
     catch(std::ios_base::failure& e) {
         std::cerr << "LC3::loadMemFile caught execption [%s]" << 
@@ -155,6 +155,19 @@ int LC3::loadMemFile(const std::string& filename, int offset)
     return status;
 }
 
+// TODO: It may make more sense to internall deal with 
+// the processor memory as an array of uint16_t
+std::vector<uint16_t> LC3::dumpMem(void) const
+{
+    std::vector<uint16_t> mem_dump(this->mem_size);
+
+    for(unsigned int m = 0; m < this->mem_size; m++)
+        mem_dump[m] = this->mem[m];
+
+    return mem_dump;
+}
+
+// TODO: fetch, decode, exec functions?
 
 // Execute 
 void LC3::execute(const uint16_t instr)

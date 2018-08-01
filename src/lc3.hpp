@@ -46,6 +46,9 @@
 #define LC3_PUTSP 0x0024
 #define LC3_HALT  0x0025
 
+// Memory 
+#define LC3_MEM_SIZE 65535
+
 // TODO : until the assembler/machine interface is complete,
 // generate the op and psuedo op table for use with the lexer.
 // Clean up this interface once the lexer internals are complete
@@ -85,7 +88,7 @@ const Opcode lc3_psuedo_op_list[] = {
 // LC3 CPU State
 typedef struct 
 {
-    uint8_t  gpr[8];
+    uint16_t  gpr[8];
     uint16_t pc;
     bool     z;
     bool     n;
@@ -99,8 +102,8 @@ class LC3
 {
     private:
         // Memory
-        uint8_t* mem;
-        uint16_t mem_size;
+        uint16_t* mem;
+        uint32_t mem_size;
         void     allocMem(void);
         // Processor
         LC3Proc     cpu;
@@ -131,9 +134,10 @@ class LC3
         void     resetCPU(void);
         // Memory 
         void     resetMem(void);
-        void     writeMem(const uint16_t adr, const uint8_t val);
-        uint8_t  readMem(const uint16_t adr) const;
+        void     writeMem(const uint16_t adr, const uint16_t val);
+        uint16_t readMem(const uint16_t adr) const;
         int      loadMemFile(const std::string& filename, int offset);
+        std::vector<uint16_t> dumpMem(void) const;
         // Execute loop
         void     execute(const uint16_t instr);
 

@@ -22,7 +22,7 @@ class TestLC3 : public ::testing::Test
         virtual void TearDown() {}
         bool verbose = false;       // set to true for additional output 
         // Parameters for machine under test 
-        uint16_t mem_size = 4096;
+        uint16_t mem_size = LC3_MEM_SIZE;
         std::string mem_filename = "data/mem_test.dat";
 };
 
