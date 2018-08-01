@@ -72,7 +72,7 @@ inline uint16_t Disassembler::dis_pc11(const uint16_t instr) const
 int Disassembler::read(const std::string& filename)
 {
     int status; 
-    return status = this->program.read(filename);
+    return status = this->program.load(filename);
 }
 
 int Disassembler::disInstr(const Instr& instr)

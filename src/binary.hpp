@@ -18,27 +18,40 @@ typedef struct
     uint16_t ins;
 } Instr;
 
-class AsmProg
+class Program
 {
     private:
         bool verbose;
         std::vector<Instr> instructions;
+
+    private:
+        // Program memory. This may become 
+        // a kind of memory image at some later date
+        uint16_t* mem;
+        unsigned int mem_size;
+        void alloc_mem(void);
+        void init_mem(void);
         
     public:
-        AsmProg();
-        ~AsmProg();
-        AsmProg(const AsmProg& that);
+        Program();
+        ~Program();
+        Program(const Program& that);
 
-        void add(const Instr& i);
+        // Instruction ops 
+        void               add(const Instr& i);
         std::vector<Instr> getInstr(void) const;
-        Instr getInstr(const unsigned int idx) const;
-
-        unsigned int getNumInstr(void) const;
-        int read(const std::string& filename);
-        int write(const std::string& filename);
-
-        void setVerbose(const bool v);
-        bool getVerbose(void) const;
+        Instr              getInstr(const unsigned int idx) const;
+        unsigned int       getNumInstr(void) const;
+        void               build(void);
+        // Memory ops 
+        void               writeMem(const unsigned int addr, const uint16_t val);
+        uint16_t           readMem(const unsigned int addr) const;
+        // Save/load 
+        int                load(const std::string& filename);
+        int                save(const std::string& filename);
+        // Console output
+        void               setVerbose(const bool v);
+        bool               getVerbose(void) const;
 };
 
 #endif /*__BINARY_HPP*/

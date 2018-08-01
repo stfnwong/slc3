@@ -90,7 +90,7 @@ TEST_F(TestAssembler, test_asm_add)
     ASSERT_EQ(0, as.getNumErr());
     as.assemble();
 
-    AsmProg prog = as.getProgram();
+    Program prog = as.getProgram();
     std::vector<Instr> instructions = as.getInstrs();
     std::cout << " N     ADDR   DATA " << std::endl;
     for(unsigned int idx = 0; idx < instructions.size(); idx++)
@@ -99,8 +99,6 @@ TEST_F(TestAssembler, test_asm_add)
         std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].adr;
         std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].ins;
         std::cout << std::endl;
-        //std::cout << "[instr " << std::setw(8) << idx << "]    ";;
-        //std::cout << std::hex << std::setw(4) << instructions[idx] << std::endl;
     }
 }
 

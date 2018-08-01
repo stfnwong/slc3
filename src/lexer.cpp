@@ -599,6 +599,10 @@ void Lexer::parseDirective(void)
     switch(o.opcode)
     {
         case ASM_BLKW:
+            // Insert memory in place
+            this->line_info.imm = arg;
+            this->cur_addr += arg;
+            break;
         case ASM_FILL:
             this->line_info.imm = arg;
             break;

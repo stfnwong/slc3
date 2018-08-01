@@ -89,9 +89,10 @@ TEST_F(TestDisassembler, test_dis_file)
     as.assemble();
 
     // Write binary to disk
-    AsmProg prog = as.getProgram();
+    Program prog = as.getProgram();
     prog.setVerbose(true);
-    status = prog.write(this->bin_output_filename);
+    prog.build();
+    status = prog.save(this->bin_output_filename);
     ASSERT_EQ(0, status);
 
     // disassemble the output
@@ -105,9 +106,7 @@ TEST_F(TestDisassembler, test_dis_file)
     // Get the resulting SourceInfo and display
     SourceInfo dsource = dis.getSourceInfo();
     for(unsigned int idx = 0; idx < dsource.getNumLines(); ++idx)
-    {
         dsource.printLine(idx);
-    }
 }
 
 int main(int argc, char *argv[])

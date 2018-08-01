@@ -15,32 +15,9 @@ Assembler::Assembler(const SourceInfo& si)
     this->src_info = si;
     this->num_err = 0;
     this->verbose = false;
-    // mem size will be not-hardcoded in future
-    this->program_mem_size = LC3_ADR_SIZE;  
-    this->alloc_program_mem();
 }
 
-Assembler::~Assembler()
-{
-    // TODO : Memory image.... not exactly sure what do with this 
-    // just yet. I could just write the whole memory image and load  
-    // that, but it makes more sense to write a program loader that
-    // fills the un-used data with zeros when the machine is started
-    delete this->mem;
-}
-
-void Assembler::alloc_program_mem(void)
-{
-    // TODO ; this size will vary later depending on 
-    // the machine we assemble for
-    this->mem = new uint8_t [LC3_ADR_SIZE];
-}
-
-void Assembler::init_program_mem(void)
-{
-    for(unsigned int m = 0; m < this->program_mem_size; ++m)
-        this->mem[m] = 0;
-}
+Assembler::~Assembler() {}
 
 inline uint16_t Assembler::asm_arg1(const uint16_t arg)
 {
@@ -186,7 +163,7 @@ void Assembler::asm_not(const LineInfo& line)
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
     instr.ins = (instr.ins | this->asm_arg2(line.imm));
-    // Not has lower 6 bits set to 1
+    // NOT Has lower 6 bits set to 1
     instr.ins = (instr.ins | 0x001F);
     instr.adr = line.addr;
 
@@ -261,8 +238,6 @@ void Assembler::asm_trap(const LineInfo& line)
 }
 
 // ================ DIRECTIVES / PSUEDO OPS 
-
-
 void Assembler::dir_blkw(const LineInfo& line)
 {
     if(this->verbose)
@@ -270,8 +245,10 @@ void Assembler::dir_blkw(const LineInfo& line)
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
             line.line_num << ") assembling .BLKW" << std::endl;
     }
-    // TODO : where to place the memory? Anywhere? Anywhere before 
-    // the start address (but after the reserved area for traps)?
+
+    unsigned int addr;
+    for(addr = line.addr; addr < line.addr + line.imm; addr++)
+        this->program.writeMem(addr, 0xFFFF); // TODO: proper value
 }
 
 void Assembler::dir_fill(const LineInfo& line)
@@ -282,7 +259,7 @@ void Assembler::dir_fill(const LineInfo& line)
             line.line_num << ") assembling .FILL" << std::endl;
     }
     // Next location in memory gets line.imm
-    this->mem[line.addr] = line.imm;
+    this->program.writeMem(line.addr, line.imm);
 }
 
 void Assembler::dir_orig(const LineInfo& line)
@@ -390,7 +367,7 @@ unsigned int Assembler::getNumErr(void) const
     return this->num_err;
 }
 
-AsmProg Assembler::getProgram(void) const
+Program Assembler::getProgram(void) const
 {
     return this->program;
 }
@@ -412,5 +389,5 @@ bool Assembler::getVerbose(void) const
 
 int Assembler::write(const std::string& filename)
 {
-    return this->program.write(filename);
+    return this->program.save(filename);
 }

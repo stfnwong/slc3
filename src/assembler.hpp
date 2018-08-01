@@ -29,14 +29,8 @@ class Assembler
 
     private:
         SourceInfo  src_info;
-        AsmProg     program;
+        Program     program;   // TODO: mem size later
         uint16_t    start_addr;
-
-    private:
-        uint8_t* mem;
-        uint32_t program_mem_size;
-        void alloc_program_mem(void);
-        void init_program_mem(void);
 
     private:
         inline uint16_t asm_arg1(const uint16_t arg);
@@ -76,7 +70,7 @@ class Assembler
 
         void assemble(void);
         unsigned int getNumErr(void) const;
-        AsmProg getProgram(void) const;
+        Program getProgram(void) const;
         std::vector<Instr> getInstrs(void) const;
         
         void setVerbose(const bool v);

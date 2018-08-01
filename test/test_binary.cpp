@@ -71,13 +71,13 @@ void TestBinary::SetUp(void)
 // Basic init test 
 TEST_F(TestBinary, test_init)
 {
-    AsmProg asm_bin;
+    Program asm_bin;
     ASSERT_EQ(0, asm_bin.getNumInstr());
 }
 
 TEST_F(TestBinary, test_write)
 {
-    // Prepare an AsmProg object
+    // Prepare an Program object
     Lexer lexer(this->op_table, this->asm_src_filename);
     lexer.setVerbose(false);
     this->source_info = lexer.lex();
@@ -87,34 +87,40 @@ TEST_F(TestBinary, test_write)
 
     // Write binary to disk
     int status;
-    AsmProg prog = as.getProgram();
+    Program prog = as.getProgram();
     prog.setVerbose(true);
-    status = prog.write(this->bin_output_filename);
+    status = prog.save(this->bin_output_filename);
     ASSERT_EQ(0, status);
 }
 
 TEST_F(TestBinary, test_read)
 {
-    // Prepare an AsmProg object
+    // Prepare an Program object
     Lexer lexer(this->op_table, this->asm_src_filename);
     lexer.setVerbose(false);
     this->source_info = lexer.lex();
     Assembler as(this->source_info);
     as.setVerbose(false);
+    std::cout << "Assembling program...";
     as.assemble();
+    std::cout << " done" << std::endl;
 
-    // Write binary to disk
+    std::cout << "Writing binary to disk...";
     int status;
-    AsmProg prog = as.getProgram();
+    Program prog = as.getProgram();
     prog.setVerbose(true);
-    status = prog.write(this->bin_output_filename);
+    prog.build();
+    status = prog.save(this->bin_output_filename);
     ASSERT_EQ(0, status);
+    std::cout << " done" << std::endl;
 
     // Read into new object, compare 
     // object members 
-    AsmProg read_prog;
+    std::cout << "Loading assembled program into memory...";
+    Program read_prog;
     read_prog.setVerbose(true);
-    read_prog.read(this->bin_output_filename);
+    read_prog.load(this->bin_output_filename);
+    std::cout << " done" << std::endl;
 
     ASSERT_EQ(prog.getNumInstr(), read_prog.getNumInstr());
     std::vector<Instr> instr_write;
@@ -124,11 +130,13 @@ TEST_F(TestBinary, test_read)
     instr_read  = read_prog.getInstr();
     ASSERT_EQ(instr_write.size(), instr_read.size());
 
-    for(unsigned idx = 0; idx < instr_write.size(); ++idx)
+    std::cout << "Checking program binary against lexed source...";
+    for(unsigned int idx = 0; idx < instr_write.size(); ++idx)
     {
         ASSERT_EQ(instr_write[idx].adr, instr_read[idx].adr);
         ASSERT_EQ(instr_write[idx].ins, instr_read[idx].ins);
     }
+    std::cout << " done" << std::endl;
 }
 
 

@@ -26,27 +26,12 @@
 #define ASM_FILL    0x03
 #define ASM_ORIG    0x04
 #define ASM_STRINGZ 0x05
+
 //typedef enum {
 //    ASM_INVALID, ASM_BLKW, ASM_END, ASM_FILL, ASM_ORIG, ASM_STRINGZ
 //} LEX_ASM_DIR;
 
-
-// Assembler directives 
-const char LEX_ORIG[]    = ".ORIG";
-const char LEX_END[]     = ".END";
-const char LEX_BLKW[]    = ".BLKW";
-const char LEX_FILL[]    = ".FILL";
-const char LEX_STRINGZ[] = ".STRINGZ";
-const char LEX_INVALID[] = ".INVALID";
-// Psuedo-ops for standard TRAP vectors 
-// TODO : these might be best moved to the LC3 at a later date 
-// as they have memory mappings specific to the LC3
-//const char LEX_HALT[]    = "HALT";
-//const char LEX_PUTS[]    = "PUTS";
-//const char LEX_IN[]      = "IN";
-//const char LEX_OUT[]     = "OUT";
-
-// TODO: Make list of directive opcodes here 
+// Assembler directives that are not trap vectors 
 static Opcode LEX_ASM_DIRECTIVE_OPCODES[] = {
     {ASM_BLKW,    ".BLKW"},
     {ASM_END,     ".END"},
