@@ -49,7 +49,6 @@ void OpcodeTable::get(const uint16_t opcode, Opcode& o) const
     // TODO : same as above but 'search by opcode'
     unsigned int idx;
 
-
     for(idx = 0; idx < this->op_list.size(); idx++)
     {
         if(opcode == this->op_list[idx].opcode)
@@ -62,6 +61,18 @@ void OpcodeTable::get(const uint16_t opcode, Opcode& o) const
     }
     o.opcode = 0;
     o.mnemonic = "M_INVALID";
+}
+
+std::string OpcodeTable::getMnemonic(const uint16_t opcode) const
+{
+    // At some point maybe I should deal with all these linear scans..
+    for(unsigned int idx = 0; idx < this->op_list.size(); ++idx)
+    {
+        if(opcode == this->op_list[idx].opcode)
+            return this->op_list[idx].mnemonic;
+    }
+
+    return "OP_INVAILD";
 }
 
 void OpcodeTable::getIdx(const unsigned int idx, Opcode& o) const

@@ -24,14 +24,6 @@ class Program
         bool verbose;
         std::vector<Instr> instructions;
 
-    private:
-        // Program memory. This may become 
-        // a kind of memory image at some later date
-        uint16_t* mem;
-        unsigned int mem_size;
-        void alloc_mem(void);
-        void init_mem(void);
-        
     public:
         Program();
         ~Program();

@@ -12,34 +12,14 @@ Program::Program()
 {
     this->verbose = false;
     this->mem_size = 65536;         // TODO: make adjustable
-    this->alloc_mem();
-    this->init_mem();
 }
 
-Program::~Program()
-{
-    delete[] this->mem;
-}
+Program::~Program() {}
 
-void Program::alloc_mem(void)
-{
-    this->mem = new uint16_t[this->mem_size];
-}
-
-void Program::init_mem(void)
-{
-    for(unsigned int m = 0; m < this->mem_size; ++m)
-        this->mem[m] = 0;
-}
 
 Program::Program(const Program& that)
 {
     this->instructions = that.instructions;
-    // Also need to copy memory
-    this->mem_size = that.mem_size;
-    this->mem = new uint16_t[this->mem_size];
-    for(unsigned int m = 0; m < this->mem_size; ++m)
-        this->mem[m] = that.mem[m];
 }
 
 // Instruction Ops 
@@ -85,16 +65,27 @@ void Program::build(void)
 // Memmory Ops 
 void Program::writeMem(const unsigned int addr, const uint16_t val)
 {
-    this->mem[addr] = val;
+    // TODO: reformulate this is an instr and add to instruction list
+    Instr instr;
+
+    instr.adr = addr;
+    instr.ins = val;
+    this->instructions.push_back(instr);
 }
 
 uint16_t Program::readMem(const unsigned int addr) const
 {
+    // TODO : scan the instr for that addr and return the memm
+    // once things are working we can eliminate the linear scan
     //return this->mem[addr % this->mem_size];
-    return this->mem[addr];
+    for(unsigned int m = 0; m < this->instructions.size(); ++m)
+    {
+        if(addr == this->instructions[m].adr)
+            return this->instructions[m].ins;
+    }
+    
+    return 0;
 }
-
-
 
 /*
  * PROGRAM OBJECT BINARY FORMAT
@@ -103,6 +94,11 @@ uint16_t Program::readMem(const unsigned int addr) const
  * requires 4 bytes. First two bytes are address, second two bytes are
  * data for that address.
  *
+ */
+
+/* 
+ * load()
+ * Load a program binary from disk
  */
 int Program::load(const std::string& filename)
 {
@@ -121,7 +117,7 @@ int Program::load(const std::string& filename)
         return -1;
     }
 
-    infile.read(reinterpret_cast<char*> (&num_records), sizeof(uint16_t));
+    infile.read(reinterpret_cast<char*> (&num_records), sizeof(uint32_t));
     if(num_records == 0)
     {
         std::cerr << "[" << __FUNCTION__ << "] no instruction records in file " << filename << std::endl;
@@ -145,9 +141,13 @@ int Program::load(const std::string& filename)
     return 0;
 }
 
+/*
+ * save()
+ * Save a program binary to disk
+ */
 int Program::save(const std::string& filename)
 {
-    uint16_t N;
+    uint32_t N;
     std::ofstream outfile;
 
     if(this->instructions.size() < 1)
@@ -168,8 +168,8 @@ int Program::save(const std::string& filename)
         return -1;
     }
 
-    N = (uint16_t) this->instructions.size();
-    outfile.write(reinterpret_cast<char*>(&N), sizeof(uint16_t));
+    N = (uint32_t) this->instructions.size();
+    outfile.write(reinterpret_cast<char*>(&N), sizeof(uint32_t));
     for(unsigned int idx = 0; idx < this->instructions.size(); ++idx)
     {
         outfile.write(reinterpret_cast<char*>(

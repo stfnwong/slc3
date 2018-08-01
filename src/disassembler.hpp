@@ -10,6 +10,9 @@
 #include <string>
 #include "source.hpp"
 #include "binary.hpp"
+// Need to know something about opcodes here to
+// build the mnemonic look up table 
+#include "opcode.hpp"
 
 /*
  * Disassembler
@@ -24,6 +27,10 @@ class Disassembler
         Program    program;
         SourceInfo source;
         LineInfo   cur_line;
+
+    private:
+        // Tables for mnemonic lookup
+        OpcodeTable lc3_op_table;
 
     private:
         // instruction disassembly

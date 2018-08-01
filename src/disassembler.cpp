@@ -12,10 +12,12 @@
 // stuff at some future point
 #include "lc3.hpp"
 
-
 Disassembler::Disassembler()
 {
     this->verbose = false;
+    // Build the op table 
+    for(const Opcode &op : lc3_op_list)
+        this->lc3_op_table.add(op);
 }
 
 Disassembler::~Disassembler() {} 
@@ -80,13 +82,23 @@ int Disassembler::disInstr(const Instr& instr)
     int status = 0;
     Opcode o;
 
-    // TODO : Look up menmonic
+    if(this->verbose)
+    {
+        std::cout << "[" << __FUNCTION__ << 
+            "] disassembling instruction 0x" << std::hex <<
+            std::setw(4) << std::setfill('0') << instr.ins <<
+            " with address 0x" << std::setw(4) << std::setfill('0') <<
+            instr.adr << std::endl;
+    }
+
     o.opcode = this->dis_opcode(instr.ins);
+    //o.mnemonic = this->lc3_op_table.getMnemonic(o.opcode);
     this->cur_line.opcode = o;
     this->cur_line.addr   = instr.adr;
     switch(o.opcode)
     {
         case LC3_ADD:
+            this->cur_line.opcode.mnemonic = "ADD";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
             this->cur_line.arg2 = this->dis_op2(instr.ins);
             this->cur_line.is_imm  = this->is_imm(instr.ins);
@@ -98,6 +110,7 @@ int Disassembler::disInstr(const Instr& instr)
             break;
 
         case LC3_AND:
+            this->cur_line.opcode.mnemonic = "AND";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
             this->cur_line.arg2 = this->dis_op2(instr.ins);
             this->cur_line.is_imm  = this->is_imm(instr.ins);
@@ -109,29 +122,34 @@ int Disassembler::disInstr(const Instr& instr)
             break;
 
         case LC3_JSR:
+            this->cur_line.opcode.mnemonic = "JSR";
             this->cur_line.imm = this->dis_pc11(instr.ins);
 
             break;
 
         case LC3_BR:
+            this->cur_line.opcode.mnemonic = "BR";
             this->cur_line.flags = this->dis_flags(instr.ins);
             this->cur_line.imm   = this->dis_pc9(instr.ins);
 
             break;
 
         case LC3_LEA:
+            this->cur_line.opcode.mnemonic = "LEA";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
             this->cur_line.imm  = this->dis_pc9(instr.ins);
 
             break;
 
         case LC3_LD:
+            this->cur_line.opcode.mnemonic = "LD";
             this->cur_line.arg1 = this->dis_op1(instr.ins); 
             this->cur_line.imm  = this->dis_pc9(instr.ins);
 
             break;
 
         case LC3_NOT:
+            this->cur_line.opcode.mnemonic = "NOT";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
             this->cur_line.arg2 = this->dis_op2(instr.ins);
             this->cur_line.imm  = this->dis_of6(instr.ins);
@@ -139,8 +157,8 @@ int Disassembler::disInstr(const Instr& instr)
             break;
 
         case LC3_STR:
+            this->cur_line.opcode.mnemonic = "STR";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
-
 
             break;
 
