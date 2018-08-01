@@ -326,9 +326,18 @@ void Lexer::parseOpcode(const Opcode& o)
             // Decide if this is JMP or RET
             if(o.mnemonic == "JMP")
             {
+                if(!this->getNextArg())
+                {
+                    this->line_info.error = true;
+                    break;
+                }
+                arg = std::string(this->token_buf);
+                this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
             }
             else if(o.mnemonic == "RET")
             {
+                this->line_info.arg1 = 0x0;
+                this->line_info.arg2 = 0x3;
             }
             else
             {
