@@ -89,5 +89,4 @@ class SourceInfo
         void printLine(const unsigned int idx);
 }; 
 
-
 #endif /*__SOURCE_HPP*/

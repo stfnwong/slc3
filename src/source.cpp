@@ -70,7 +70,6 @@ void SymbolTable::dump(void)
     }
 }
 
-
 // LineInfo
 void initLineInfo(LineInfo& l)
 {
@@ -122,8 +121,6 @@ void printLineInfo(const LineInfo& l)
     std::cout << oss.str();
 }
 
-
-
 /*
  * SOURCEINFO 
  */
@@ -140,9 +137,9 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
     std::ostringstream oss;
 
     oss << "---------------------------------------------------------------------" << std::endl;
-    oss << "Line    Type   Addr  Mnemonic    Opcode  flags   arg1  arg2  arg3  imm  " << std::endl;
+    oss << "Line  Type   Addr  Mnemonic    Opcode  flags   arg1  arg2  arg3  imm  " << std::endl;
 
-    oss << std::left << std::setw(8) << std::setfill(' ') << l.line_num;
+    oss << std::left << std::setw(6) << std::setfill(' ') << l.line_num;
     oss << "[";
     if(l.is_imm)
         oss << "i";
@@ -175,21 +172,20 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
         oss << ".";
     // Insert args
     oss << "  ";
-    oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.arg1;
-    oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.arg2;
-    oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.arg3;
-    oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.imm;
+    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg1;
+    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg2;
+    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg3;
+    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.imm;
 
-    // Text 
+    // (Next line) Text 
     oss << std::endl;
-    oss << "Label   [" << std::setw(16) << std::setfill(' ') << l.label << "] ";
-    oss << "Symbol  [" << std::setw(16) << std::setfill(' ') << l.symbol << "] ";
+    oss << "Label [" << std::setw(16) << std::setfill(' ') << l.label << "] ";
+    oss << "Symbol[" << std::setw(16) << std::setfill(' ') << l.symbol << "] ";
 
     oss << std::endl;
     
     return oss.str();
 }
-
 
 void SourceInfo::add(const LineInfo& l)
 {
@@ -279,7 +275,6 @@ unsigned int SourceInfo::numInstance(const std::string& m) const
     return n;
 }
 
-
 // Save/load data 
 // TODO : may need a serialization library here 
 int SourceInfo::write(const std::string& filename)
@@ -292,6 +287,7 @@ int SourceInfo::write(const std::string& filename)
     return status;
 }
 
+// TODO : May need serialization library here
 int SourceInfo::read(const std::string& filename)
 {
     int status = 0;

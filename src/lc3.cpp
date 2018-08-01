@@ -102,6 +102,7 @@ inline void LC3::set_flags(const uint8_t val)
     }
 }
 
+// TODO : this will where the final op_table interface is contained
 void LC3::build_op_table(void)
 {
     Opcode opcode_list[] = {
@@ -114,8 +115,6 @@ void LC3::build_op_table(void)
     for(const Opcode &op : opcode_list)
         this->op_table.add(op);
 }
-
-
 
 // ======== Memory 
 void LC3::resetMem(void)

@@ -12,6 +12,9 @@
 #include "source.hpp"
 #include "binary.hpp"
 
+//TODO : This also needs to move to some machine specific 
+// place for generic (visitor) implementation
+#define LC3_ADR_SIZE 65535
 
 /*
  * Asssembler
@@ -25,27 +28,47 @@ class Assembler
         unsigned int num_err;
 
     private:
-        SourceInfo src_info;
+        SourceInfo  src_info;
         AsmProg     program;
+        uint16_t    start_addr;
+
+    private:
+        uint8_t* mem;
+        uint32_t program_mem_size;
+        void alloc_program_mem(void);
+        void init_program_mem(void);
 
     private:
         inline uint16_t asm_arg1(const uint16_t arg);
         inline uint16_t asm_arg2(const uint16_t arg);
         inline uint16_t asm_arg3(const uint16_t arg);
         inline uint16_t asm_of6(const uint16_t arg);
+        inline uint8_t  asm_in8(const uint16_t arg);
         inline uint16_t asm_pc9(const uint16_t arg);
         // Assembly of instructions 
         void asm_add(const LineInfo& line);
         void asm_and(const LineInfo& line);
         void asm_br(const LineInfo& line);
+        // TODO:  JMP
+        void asm_lea(const LineInfo& line);
         void asm_ld(const LineInfo& line);
         void asm_ldr(const LineInfo& line);
-        void asm_lea(const LineInfo& line);
+        void asm_not(const LineInfo& line);
+        void asm_ret(const LineInfo& line);
+        void asm_rti(const LineInfo& line);
+
+        void asm_st(const LineInfo& line);
         void asm_str(const LineInfo& line);
         void asm_sti(const LineInfo& line);
 
+        void asm_trap(const LineInfo& line);
+
     private:
-        // Handle directives
+        // Handle directives / psuedo ops 
+        void dir_blkw(const LineInfo& line);
+        void dir_fill(const LineInfo& line);
+        void dir_orig(const LineInfo& line);
+        void dir_stringz(const LineInfo& line);
 
     public:
         Assembler(const SourceInfo& si);

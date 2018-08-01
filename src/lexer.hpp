@@ -17,7 +17,19 @@
 
 #define LEX_DEBUG 
 // Largest size allowable for a token
-#define LEX_TOKEN_MAX_LEN 64
+#define LEX_TOKEN_MAX_LEN 32
+
+// Assembler directives (which don't map to trap opcodes)
+#define ASM_INVALID 0x00
+#define ASM_BLKW    0x01
+#define ASM_END     0x02
+#define ASM_FILL    0x03
+#define ASM_ORIG    0x04
+#define ASM_STRINGZ 0x05
+//typedef enum {
+//    ASM_INVALID, ASM_BLKW, ASM_END, ASM_FILL, ASM_ORIG, ASM_STRINGZ
+//} LEX_ASM_DIR;
+
 
 // Assembler directives 
 const char LEX_ORIG[]    = ".ORIG";
@@ -26,6 +38,23 @@ const char LEX_BLKW[]    = ".BLKW";
 const char LEX_FILL[]    = ".FILL";
 const char LEX_STRINGZ[] = ".STRINGZ";
 const char LEX_INVALID[] = ".INVALID";
+// Psuedo-ops for standard TRAP vectors 
+// TODO : these might be best moved to the LC3 at a later date 
+// as they have memory mappings specific to the LC3
+//const char LEX_HALT[]    = "HALT";
+//const char LEX_PUTS[]    = "PUTS";
+//const char LEX_IN[]      = "IN";
+//const char LEX_OUT[]     = "OUT";
+
+// TODO: Make list of directive opcodes here 
+static Opcode LEX_ASM_DIRECTIVE_OPCODES[] = {
+    {ASM_BLKW,    ".BLKW"},
+    {ASM_END,     ".END"},
+    {ASM_FILL,    ".FILL"},
+    {ASM_ORIG,    ".ORIG"},
+    {ASM_STRINGZ, ".STRINGZ"},
+    {ASM_INVALID, ".INVALID"},
+};
 
 // TODO: for now we just lex for LC3, but maybe we pass
 // a machine object here and extract the correct symbol/address
@@ -35,6 +64,8 @@ class Lexer
     private:
         bool verbose;
         OpcodeTable op_table;
+        OpcodeTable psuedo_op_table;
+        OpcodeTable asm_dir_table;
         std::string filename;
         std::string src;
         unsigned int cur_pos;
@@ -61,6 +92,7 @@ class Lexer
         bool isDirective(void) const;
         bool isSpace(void);
         bool isMnemonic(void);
+        bool isTrapOp(void);
         void skipLine(void);
         
     private:
@@ -68,14 +100,15 @@ class Lexer
         bool getNextArg(void);
         void parseOpcodeArgs(void);
         void parseOpcode(const Opcode& o);
+        void parseTrapOpcode(void);
         void parseDirective(void);
         void parseLine(void);
 
     // Source internals 
     private:
-        SymbolTable sym_table;
+        SymbolTable  sym_table;
         unsigned int cur_line;
-        void resolveLabels(void);
+        void         resolveLabels(void);
     public:
         // Lexing function
         SourceInfo lex(void);

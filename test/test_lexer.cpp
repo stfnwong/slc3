@@ -15,7 +15,6 @@
 #include "source.hpp"
 
 //#define DUMP_SOURCE
-#define TEST_NUM_OPS 11
 
 // TODO: move this to util function?
 // Helper function to build op table for testing lexer
@@ -61,14 +60,14 @@ class TestLexer : public ::testing::Test
         // needs to be updated
         unsigned int src_length = 617; 
         OpcodeTable op_table;
-        unsigned int expected_num_ops = TEST_NUM_OPS;
+        //unsigned int expected_num_ops = TEST_NUM_OPS;
 };
 
 void TestLexer::SetUp(void)
 {
     this->op_table = test_build_op_table();
-    ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
-    std::cout << "Generated new opcode table for lexer test" << std::endl;
+    std::cout << "Generated new opcode table for lexer test containing"
+        << op_table.getNumOps() << " opcodes" << std::endl;
     this->op_table.print();
 }
 
@@ -87,7 +86,6 @@ TEST_F(TestLexer, test_init)
         std::cout << l.dumpchar(idx);
     std::cout << std::endl;
 #endif /*DUMP_SOURCE*/
-    ASSERT_EQ(this->expected_num_ops, l.opTableSize());
     // Dump the op table and show ops 
     std::cout << "Dumping lexer opcode table" << std::endl;
     l.dumpOpTable();
@@ -107,11 +105,10 @@ TEST_F(TestLexer, test_lex_source)
     // Dump the source info to console
     std::cout << "Lexer created info for " << lsource.getNumLines() << " lines" << std::endl;
     for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
-    {
         lsource.printLine(idx);
-    }
 
     // TODO: test that this is correct - need a known good sourceinfo to compare against
+    // May need to make this by hand...
     unsigned int num_ops;
     std::cout << "Opcodes by frequency: " << std::endl;
     for(unsigned int n = 0; n < this->op_table.getNumOps(); n++)

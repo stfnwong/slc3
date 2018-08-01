@@ -37,9 +37,52 @@
 
 #define LC3_JMP_RET 0x0C
 
-// List of opcodes + mnemonic string
+// LC3 psuedo ops. Format here is psuedo op followed by 
+// trap table address
+#define LC3_GETC  0x0020
+#define LC3_OUT   0x0021
+#define LC3_PUTS  0x0022
+#define LC3_IN    0x0023
+#define LC3_PUTSP 0x0024
+#define LC3_HALT  0x0025
 
+// TODO : until the assembler/machine interface is complete,
+// generate the op and psuedo op table for use with the lexer.
+// Clean up this interface once the lexer internals are complete
+const Opcode lc3_op_list[] = {
+    {LC3_ADD, "ADD"},
+    {LC3_AND, "AND"},
+    {LC3_LD,  "LD"},
+    {LC3_LDR, "LDR"},
+    {LC3_LEA, "LEA"},
+    {LC3_ST,  "ST"},
+    {LC3_STI, "STI"},
+    {LC3_STR, "STR"},
+    {LC3_NOT, "NOT"},
+    {LC3_RTI, "RTI"},
+    // Jump instr 
+    {LC3_JMP_RET, "JMP"},
+    {LC3_JMP_RET, "RET"},
+    {LC3_JSR, "JSR"},
+    {LC3_JSR, "JSRR"},
+    // BR and variants 
+    {LC3_BR,  "BR"},
+    {LC3_BRP, "BRp"},
+    {LC3_BRN, "BRn"},
+    // Trap vector 
+    {LC3_TRAP, "TRAP"}
+};
 
+const Opcode lc3_psuedo_op_list[] = {
+    {LC3_GETC,  "GETC"},
+    {LC3_OUT,   "OUT"},
+    {LC3_PUTS,  "PUTS"},
+    {LC3_IN,    "IN"},
+    {LC3_PUTSP, "PUTSP"},
+    {LC3_HALT,  "HALT"}
+};
+
+// LC3 CPU State
 typedef struct 
 {
     uint8_t  gpr[8];
