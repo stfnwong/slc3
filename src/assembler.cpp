@@ -49,10 +49,17 @@ inline uint16_t Assembler::asm_pc9(const uint16_t arg)
     return 0x0000 | (arg & 0x01FF);
 }
 
+inline uint16_t Assembler::asm_pc11(const uint16_t arg)
+{
+    return 0x0000 | (arg & 0x07FF);
+}
+
 // Instruction assembly
 void Assembler::asm_add(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -72,6 +79,8 @@ void Assembler::asm_add(const LineInfo& line)
 void Assembler::asm_and(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -91,6 +100,8 @@ void Assembler::asm_and(const LineInfo& line)
 void Assembler::asm_br(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -104,9 +115,59 @@ void Assembler::asm_br(const LineInfo& line)
     this->program.add(instr);
 }
 
+void Assembler::asm_jmp(const LineInfo& line)
+{
+    Instr instr;
+
+    instr.ins = 0;
+    if(this->verbose)
+    {
+        std::cout << "[" << __FUNCTION__ << "] (src line " 
+            << line.line_num << ") assembling JMP" << std::endl;
+    }
+    instr.ins = (instr.ins | (line.opcode.opcode << 12));
+    instr.ins = (instr.ins | this->asm_arg2(instr.ins));
+    instr.adr = line.addr;
+
+    this->program.add(instr);
+}
+
+void Assembler::asm_jsr(const LineInfo& line)
+{
+    Instr instr;
+
+    instr.ins = 0;
+    // Is this JSR or JSRR?
+    if(line.arg1 > 0)       // JSR 
+    {
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] (src line " 
+                << line.line_num << ") assembling JSR" << std::endl;
+        }
+        instr.ins = (instr.ins | this->asm_pc11(instr.ins));
+    }
+    else                    // JSRR
+    {
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] (src line " 
+                << line.line_num << ") assembling JSRR" << std::endl;
+        }
+        instr.ins = (instr.ins | this->asm_arg2(instr.ins));
+    }
+    instr.ins = (instr.ins | (line.opcode.opcode << 12));
+    instr.adr = line.addr;
+
+    this->program.add(instr);
+
+}
+
 void Assembler::asm_lea(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -123,6 +184,8 @@ void Assembler::asm_lea(const LineInfo& line)
 void Assembler::asm_ld(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -139,6 +202,8 @@ void Assembler::asm_ld(const LineInfo& line)
 void Assembler::asm_ldr(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -155,6 +220,8 @@ void Assembler::asm_ldr(const LineInfo& line)
 void Assembler::asm_not(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -170,11 +237,11 @@ void Assembler::asm_not(const LineInfo& line)
     this->program.add(instr);
 }
 
-
-
 void Assembler::asm_st(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -191,6 +258,8 @@ void Assembler::asm_st(const LineInfo& line)
 void Assembler::asm_str(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -208,6 +277,8 @@ void Assembler::asm_str(const LineInfo& line)
 void Assembler::asm_sti(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -225,6 +296,8 @@ void Assembler::asm_sti(const LineInfo& line)
 void Assembler::asm_trap(const LineInfo& line)
 {
     Instr instr;
+
+    instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
@@ -278,6 +351,7 @@ void Assembler::dir_stringz(const LineInfo& line)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
             line.line_num << ") assembling .STRINGZ" << std::endl;
+        std::cout << "NOT YET IMPLEMENTED" << std::endl;
     }
 }
 
@@ -333,6 +407,9 @@ void Assembler::assemble(void)
                 break;
             case LC3_BR:
                 this->asm_br(cur_line);
+                break;
+            case LC3_JSR:
+                this->asm_jsr(cur_line);
                 break;
             case LC3_LEA:
                 this->asm_lea(cur_line);

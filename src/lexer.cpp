@@ -352,6 +352,37 @@ void Lexer::parseOpcode(const Opcode& o)
 
             break;
 
+        case LC3_JSR:
+            if(!this->getNextArg())
+            {
+                this->line_info.error = true;
+                break;
+            }
+            arg = std::string(this->token_buf);
+            if(o.mnemonic == "JSR")
+            {
+                this->line_info.arg1 = 0x4;
+                this->line_info.imm = std::stoi(arg.substr(1, arg.length()));
+            }
+            else if(o.mnemonic == "JSRR")
+            {
+                this->line_info.arg1 = 0x0;
+                this->line_info.arg2 = std::stoi(arg.substr(1,arg.length()));
+            }
+            else
+            {
+                this->line_info.error = true;
+                if(this->verbose)
+                {
+                    std::cout << "[" << __FUNCTION__ << 
+                        "] invalid jump opcode " << o.mnemonic 
+                        << std::endl;
+                }
+            }
+
+
+            break;
+
         case LC3_LEA:
             if(!this->getNextArg())
             {
