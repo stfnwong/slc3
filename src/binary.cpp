@@ -11,7 +11,6 @@
 Program::Program()
 {
     this->verbose = false;
-    this->mem_size = 65536;         // TODO: make adjustable
 }
 
 Program::~Program() {}
@@ -53,13 +52,13 @@ Instr Program::getInstr(const unsigned int idx) const
  */
 void Program::build(void)
 {
-    Instr instr;
-    // Write the instruction list to memory 
-    for(unsigned int i = 0; i < this->instructions.size(); i++)
-    {
-        instr = this->instructions[i];
-        this->mem[instr.adr] = instr.ins;
-    }
+    //Instr instr;
+    //// Write the instruction list to memory 
+    //for(unsigned int i = 0; i < this->instructions.size(); i++)
+    //{
+    //    instr = this->instructions[i];
+    //    this->mem[instr.adr] = instr.ins;
+    //}
 }
 
 // Memmory Ops 

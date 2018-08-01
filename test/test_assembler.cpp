@@ -55,6 +55,7 @@ class TestAssembler : public ::testing::Test
         // Parameters for machine under test 
         uint16_t mem_size = 4096;
         std::string src_filename = "data/pow10.asm";
+        std::string asm_prog_outfile = "data/test_asm_prog.dat";
         unsigned int src_length = 617; 
         OpcodeTable op_table;
         unsigned int expected_num_ops = TEST_NUM_OPS;
@@ -100,6 +101,7 @@ TEST_F(TestAssembler, test_asm_add)
         std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].ins;
         std::cout << std::endl;
     }
+    prog.save(this->asm_prog_outfile);
 }
 
 int main(int argc, char *argv[])

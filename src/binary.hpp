@@ -18,6 +18,10 @@ typedef struct
     uint16_t ins;
 } Instr;
 
+/*
+ * Program
+ * Holds an LC3 assembly program
+ */
 class Program
 {
     private:
