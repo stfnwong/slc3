@@ -52,8 +52,39 @@ TEST_F(TestLC3, test_init)
     LC3 lc3(this->mem_size);
     ASSERT_EQ(this->mem_size, lc3.getMemSize());
     lc3.resetMem();
+
+    // Check memory contents. Note that resetMem()
+    // also sets up default values for memory-mapped 
+    // registers
+    std::cout << "Checking memory contents...";
     for(uint16_t i = 0; i < this->mem_size; i++)
-        ASSERT_EQ(0, lc3.readMem(i));
+    {
+        switch(i)
+        {
+            case LC3_GETC   : 
+                ASSERT_EQ(LC3_TRAP20, lc3.readMem(i));
+                break;
+            case LC3_OUT    : 
+                ASSERT_EQ(LC3_TRAP21, lc3.readMem(i));
+                break;
+            case LC3_PUTS   : 
+                ASSERT_EQ(LC3_TRAP22, lc3.readMem(i));
+                break;
+            case LC3_IN     : 
+                ASSERT_EQ(LC3_TRAP23, lc3.readMem(i));
+                break;
+            case LC3_PUTSP  : 
+                ASSERT_EQ(LC3_TRAP24, lc3.readMem(i));
+                break;
+            case LC3_HALT   : 
+                ASSERT_EQ(LC3_TRAP25, lc3.readMem(i));
+                break;
+            default:
+                ASSERT_EQ(0, lc3.readMem(i));
+                break;
+        }
+    }
+    std::cout << " done" << std::endl;
 }
 
 TEST_F(TestLC3, test_load_mem_file)
@@ -66,7 +97,40 @@ TEST_F(TestLC3, test_load_mem_file)
     // Clear the memory and check that all values are zeroed
     lc3.resetMem();
     for(unsigned int i = 0; i < lc3.getMemSize(); i++)
-        ASSERT_EQ(0, lc3.readMem(i));
+    {
+        switch(i)
+        {
+            case LC3_GETC   : 
+                ASSERT_EQ(LC3_TRAP20, lc3.readMem(i));
+                break;
+            case LC3_OUT    : 
+                ASSERT_EQ(LC3_TRAP21, lc3.readMem(i));
+                break;
+            case LC3_PUTS   : 
+                ASSERT_EQ(LC3_TRAP22, lc3.readMem(i));
+                break;
+            case LC3_IN     : 
+                ASSERT_EQ(LC3_TRAP23, lc3.readMem(i));
+                break;
+            case LC3_PUTSP  : 
+                ASSERT_EQ(LC3_TRAP24, lc3.readMem(i));
+                break;
+            case LC3_HALT   : 
+                ASSERT_EQ(LC3_TRAP25, lc3.readMem(i));
+                break;
+            default:
+                ASSERT_EQ(0, lc3.readMem(i));
+                break;
+        }
+    }
+
+    //if(p1.n != p2.n)
+    //    return false;
+    //if(p1.p != p2.p)
+    //    return false;
+    //if(p1.z != p2.z)
+    //    return false;
+
 
     // Generate some dummy memory contents 
     std::cout << "Generating dummy memory contents....";
@@ -91,8 +155,8 @@ TEST_F(TestLC3, test_load_mem_file)
     }
     std::cout << "done" << std::endl;
 
-    std::cout << "Checking memory....";
     // Try to read the file contents into the Machine memory 
+    std::cout << "Checking memory....";
     int status = lc3.loadMemFile(this->mem_filename, 0);
     ASSERT_EQ(0, status);
     // Check contents
@@ -101,7 +165,6 @@ TEST_F(TestLC3, test_load_mem_file)
     std::cout << "done" << std::endl;
 
     delete[] mem_contents;
-
 }
 
 TEST_F(TestLC3, test_build_op_table)
@@ -111,16 +174,17 @@ TEST_F(TestLC3, test_build_op_table)
     // and check against reference Opcode Table
     OpcodeTable lc3_op_table = lc3.getOpTable();
 
-    Opcode op;
     std::cout << "Dumping opcodes from LC3 table to console..." << std::endl;
-    for(unsigned int idx = 0; idx < lc3_op_table.getNumOps(); idx++)
-    {
-        lc3_op_table.getIdx(idx, op);
-        printOpcode(op);
-        std::cout << std::endl;
-    }
+    lc3_op_table.print();
+    //for(unsigned int idx = 0; idx < lc3_op_table.getNumOps(); idx++)
+    //{
+    //    lc3_op_table.getIdx(idx, op);
+    //    printOpcode(op);
+    //    std::cout << std::endl;
+    //}
 
     // Test get by opcode
+    Opcode op;
     lc3_op_table.get(0x01, op);
     ASSERT_STREQ("ADD", op.mnemonic.c_str());
     lc3_op_table.get(0x05, op);

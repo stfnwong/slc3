@@ -12,10 +12,6 @@
 #include "source.hpp"
 #include "binary.hpp"
 
-//TODO : This also needs to move to some machine specific 
-// place for generic (visitor) implementation
-#define LC3_ADR_SIZE 65535
-
 /*
  * Asssembler
  *
@@ -77,7 +73,6 @@ class Assembler
         bool getVerbose(void) const;
 
         int write(const std::string& filename);
-
 };
 
 #endif /*__ASSEMBLER_HPP*/

@@ -29,11 +29,7 @@ bool lc3proc_equal(const LC3Proc& p1, const LC3Proc& p2)
 {
     if(p1.pc != p2.pc)
         return false;
-    if(p1.n != p2.n)
-        return false;
-    if(p1.p != p2.p)
-        return false;
-    if(p1.z != p2.z)
+    if(p1.flags != p2.flags)
         return false;
     for(int g = 0; g < 8; g++)
     {
@@ -64,9 +60,7 @@ TEST_F(TestMTrace, test_add)
         p.pc = t;
         for(int g = 0; g < 8; g++)
             p.gpr[g] = g + t;
-        p.n = false;
-        p.p = false;
-        p.z = false;
+        p.flags = 0;
         test_trace[t] = p;
     }
 

@@ -5,14 +5,9 @@
  */
 
 #include <cctype>
-#include <cstdio>
+#include <iostream>
+#include <iomanip>
 #include "opcode.hpp"
-
-// Print an opcode 
-void printOpcode(const Opcode& o)
-{
-    //fprintf(stdout, "%s\t: $%04X", o.mnemonic.c_str(), o.opcode);
-}
 
 OpcodeTable::OpcodeTable() {} 
 
@@ -90,14 +85,15 @@ void OpcodeTable::init(void)
 void OpcodeTable::print(void) const
 {
     unsigned int idx;
-    
-    fprintf(stdout, "%ld instructions in table\n", this->op_list.size());
+
+    std::cout << this->op_list.size() << " instructions in table" << std::endl;
     for(idx = 0; idx < this->op_list.size(); idx++)
     {
-        fprintf(stdout, "op %04d : [%s] $%04X\n", 
-                idx+1, 
-                this->op_list[idx].mnemonic.c_str(), 
-                this->op_list[idx].opcode);
+        std::cout << "Op " << std::dec << std::setw(4) << std::setfill(' ') << 
+            idx + 1 << " : [" << std::setw(5) << std::setfill(' ') << 
+            this->op_list[idx].mnemonic.c_str() << "] 0x" << 
+            std::hex << std::setw(2) << std::setfill('0') <<
+            this->op_list[idx].opcode << std::endl;
     }
 }
 

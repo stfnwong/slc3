@@ -9,11 +9,33 @@
 #include <fstream>
 #include "lc3.hpp"
 
+/*
+ * LC3Proc
+ */
+//LC3Proc::LC3Proc()
+//{
+//    for(int r = 0; r < 8; r++)
+//        this->gpr[r] = 0;
+//    this->pc    = 0;
+//    this->flags = 0;
+//}
+//
+//LC3Proc::~LC3Proc() {} 
+//
+//LC3Proc::LC3Proc(const LC3Proc& that)
+//{
+//    for(int r = 0; r < 8; r++)
+//        this->gpr[r] = that.gpr[r];
+//    this->pc    = that.pc;
+//    this->flags = that.flags;
+//}
+
 //LC3::LC3(const uint16_t mem_size) : Machine()
 LC3::LC3(const uint16_t mem_size) 
 {
     this->mem_size = mem_size;
     this->allocMem();
+    this->resetMem();
     this->build_op_table();
 }
 
@@ -27,13 +49,10 @@ void LC3::allocMem(void)
     this->mem = new uint16_t[this->mem_size];
 }
 
-
 void LC3::resetCPU(void)
 {
-    this->cpu.pc = 0;
-    this->cpu.z  = false;
-    this->cpu.n  = false;
-    this->cpu.p  = false;
+    this->cpu.pc    = 0;
+    this->cpu.flags = 0;
     for(int i = 0; i < 8; i++)
         this->cpu.gpr[i] = 0;
 }
@@ -79,41 +98,31 @@ inline uint16_t LC3::instr_get_pc11(const uint16_t instr) const
 {
     return (instr & 0x03FF);
 }
-
 inline void LC3::set_flags(const uint8_t val)
 {
-    if(val == 0)
-    {
-        this->cpu.z = true;
-        this->cpu.n = false;
-        this->cpu.p = false;
-    }
-    else if(val > 0)
-    {
-        this->cpu.z = false;
-        this->cpu.n = false;
-        this->cpu.p = true;
-    }
-    else
-    {
-        this->cpu.z = false;
-        this->cpu.n = true;
-        this->cpu.p = false;
-    }
+    this->cpu.flags = (val == 0) ?
+        (this->cpu.flags | LC3_FLAG_Z) : 
+         this->cpu.flags;
+    this->cpu.flags = (val > 0) ? 
+        (this->cpu.flags | LC3_FLAG_P) : 
+         this->cpu.flags;
+    this->cpu.flags = (val < 0) ? 
+        (this->cpu.flags | LC3_FLAG_N) : 
+        this->cpu.flags;
 }
 
-// TODO : this will where the final op_table interface is contained
+/*
+ * build_op_table()
+ * Construct the internal opcode table.
+ */
 void LC3::build_op_table(void)
 {
-    Opcode opcode_list[] = {
-        {LC3_ADD, "ADD"},
-        {LC3_AND, "AND"},
-        {LC3_LD,  "LD"},
-        {LC3_ST,  "ST"}
-    };
-    // iterate over this in the C++ way
-    for(const Opcode &op : opcode_list)
+    // Build table of real ops
+    for(const Opcode &op : lc3_op_list)
         this->op_table.add(op);
+    // Build table of psuedo ops 
+    for(const Opcode &op : lc3_psuedo_op_list)
+        this->psuedo_op_table.add(op);
 }
 
 // ======== Memory 
@@ -121,6 +130,13 @@ void LC3::resetMem(void)
 {
     for(uint16_t i = 0; i < this->mem_size; i++)
         this->mem[i] = 0;
+    // Load the trap vector values 
+    this->mem[LC3_GETC]  = LC3_TRAP20;
+    this->mem[LC3_OUT]   = LC3_TRAP21;
+    this->mem[LC3_PUTS]  = LC3_TRAP22;
+    this->mem[LC3_IN]    = LC3_TRAP23;
+    this->mem[LC3_PUTSP] = LC3_TRAP24;
+    this->mem[LC3_HALT]  = LC3_TRAP25;
 }
 
 void LC3::writeMem(const uint16_t adr, const uint16_t val)
@@ -155,8 +171,6 @@ int LC3::loadMemFile(const std::string& filename, int offset)
     return status;
 }
 
-// TODO: It may make more sense to internall deal with 
-// the processor memory as an array of uint16_t
 std::vector<uint16_t> LC3::dumpMem(void) const
 {
     std::vector<uint16_t> mem_dump(this->mem_size);
@@ -168,6 +182,9 @@ std::vector<uint16_t> LC3::dumpMem(void) const
 }
 
 // TODO: fetch, decode, exec functions?
+
+
+
 
 // Execute 
 void LC3::execute(const uint16_t instr)
@@ -232,7 +249,6 @@ void LC3::execute(const uint16_t instr)
     }
 }
 
-
 // Getters 
 LC3Proc LC3::getProcState(void) const
 {
@@ -243,17 +259,22 @@ uint16_t LC3::getMemSize(void) const
 {
     return this->mem_size;
 }
+
+uint8_t LC3::getFlags(void) const
+{
+    return this->cpu.flags;
+}
 bool LC3::getZero(void) const
 {
-    return this->cpu.z;
+    return (this->cpu.flags & LC3_FLAG_Z) ? true : false;
 }
 bool LC3::getPos(void) const
 {
-    return this->cpu.p;
+    return (this->cpu.flags & LC3_FLAG_P) ? true : false;
 }
 bool LC3::getNeg(void) const
 {
-    return this->cpu.n;
+    return (this->cpu.flags & LC3_FLAG_N) ? true : false;
 }
 
 //std::vector<Opcode> LC3::getOpcodes(void) const
