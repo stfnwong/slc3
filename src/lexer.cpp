@@ -77,13 +77,23 @@ void Lexer::advance(void)
         this->cur_line++;
 }
 
+/* 
+ * exhuasted()
+ * 
+ * Returns true when the end of the source is reached
+ */
 bool Lexer::exhausted(void) const
 {
     return (this->cur_char == '\0' ||
             this->cur_pos >= this->src.size()) ? true : false;
 }
 
-// TODO : something is up with isSpace()
+/*
+ * skipWhitespace()
+ *
+ * Advance the position pointer over whitespace characters in the 
+ * source.
+ */
 void Lexer::skipWhitespace(void) 
 {
     bool space = true;
@@ -96,12 +106,13 @@ void Lexer::skipWhitespace(void)
     }
 }
 
-void Lexer::skipComment(void)
-{
-    while(this->cur_char != '\n')
-        this->advance();
-}
-
+/*
+ * readSymbol()
+ *
+ * Consumes characters in the source until reaching a 
+ * whitespace character, and places the resulting token
+ * in the token buffer.
+ */
 void Lexer::readSymbol(void)
 {
     unsigned int idx = 0;
@@ -120,20 +131,36 @@ void Lexer::readSymbol(void)
     }
 }
 
+/*
+ * isSymbol()
+ *
+ * Returns true if the contents of the token buffer is a 
+ * valid symbol, otherwise returns false.
+ */
 bool Lexer::isSymbol(void) const
 {
     return (isalnum(toupper(this->cur_char)));
 }
 
+/*
+ * isNumber()
+ *
+ * Returns true if the contents of the token buffer is a 
+ * valid numeric constant, otherwise returns false.
+ */
 bool Lexer::isNumber(void) const
 {
     return (isdigit(toupper(this->cur_char)));
 }
 
+/*
+ * isDirective()
+ *
+ * Returns true if the contents of the token buffer could be 
+ * an assembly directive, otherwise returns false;
+ */
 bool Lexer::isDirective(void) const 
 {
-    // TODO : This feels like a hack... there might be an
-    // extra 'advance()' somewhere
     return (this->cur_char == '.' || this->token_buf[0] == '.');
 }
 
@@ -144,7 +171,12 @@ bool Lexer::isSpace(void)
             this->cur_char == '\n') ? true : false;
 }
 
-// TODO: need to deal with case (removing case) here 
+/*
+ * isMnemonic()
+ *
+ * Returns true if the contents of the token buffer are a 
+ * recognized opcode mnemonic, otherwise returns false
+ */
 bool Lexer::isMnemonic(void)
 {
     if(this->token_buf[0] == '\0')
@@ -155,6 +187,12 @@ bool Lexer::isMnemonic(void)
     return (op.mnemonic != "M_INVALID") ? true : false;
 }
 
+/*
+ * isTrapOp()
+ *
+ * Returns true if the contents of the token buffer are a 
+ * recognized trap opcode mnemonic, otherwise returns false
+ */
 bool Lexer::isTrapOp(void)
 {
     if(this->token_buf[0] == '\0')
@@ -165,6 +203,12 @@ bool Lexer::isTrapOp(void)
     return (op.mnemonic != "M_INVALID") ? true : false;
 }
 
+/*
+ * skipLine()
+ *
+ * Advances the source pointer one character past the next newline
+ * character.
+ */
 void Lexer::skipLine(void)
 {
     while(this->cur_char != '\n')
@@ -652,8 +696,9 @@ void Lexer::parseDirective(void)
             break;
 
         case ASM_STRINGZ:
-            std::cout << "[" << __FUNCTION__ << 
-                "] .STRINGZ not yet implemented" << std::endl;
+            // Read the argument and place into symbol field
+            this->line_info.symbol = argstr;
+            this->cur_addr += argstr.length();
             break;
 
         default:
@@ -766,7 +811,7 @@ LINE_END:
 }
 
 /*
- * resolveLabels9)
+ * resolveLabels()
  * Replace labels with their corresponding addresses
  */
 void Lexer::resolveLabels(void)
@@ -778,7 +823,6 @@ void Lexer::resolveLabels(void)
     for(n = 0; n < this->source_info.getNumLines(); n++)
     {
         info = this->source_info.get(n);
-        //if(!info.is_label && info.label != "\0")
         if(info.symbol != "\0" && !info.is_directive)
         {
             label_addr = this->sym_table.getAddr(info.symbol);
@@ -791,8 +835,6 @@ void Lexer::resolveLabels(void)
             }
             if(label_addr > 0)
             {
-                // TODO : need to know what kind of opcode
-                // it was to know where to put the address
                 info.imm = label_addr;
                 this->source_info.update(n, info);
             }
@@ -834,17 +876,17 @@ SourceInfo Lexer::lex(void)
             continue;
         }
     }
-
-    std::cout << "DEBUG : dumping symbols before labels are resolved " << std::endl;
-    this->sym_table.dump();
-
-    // Second pass 
+    // Second pass - find addresses pointed to by labels
     this->resolveLabels();
 
     return this->source_info;
 }
 
-// ==== FILE LOADING
+/* 
+ * loadFile()
+ *
+ * Read a source file into the source buffer
+ */
 void Lexer::loadFile(const std::string& filename)
 {
     std::ifstream infile(filename);
@@ -929,6 +971,11 @@ bool Lexer::isASCII(void) const
     return true;
 }
 
+/* 
+ * dumpChar()
+ *
+ * Dump a single character from the source 
+ */
 char Lexer::dumpchar(const unsigned int idx) const
 {
     if(idx < this->src.size())

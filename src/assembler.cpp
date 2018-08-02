@@ -23,38 +23,35 @@ inline uint16_t Assembler::asm_arg1(const uint16_t arg)
 {
     return 0x0000 | (arg << 9);
 }
-
 inline uint16_t Assembler::asm_arg2(const uint16_t arg)
 {
     return 0x0000 | (arg << 6);
 }
-
 inline uint16_t Assembler::asm_arg3(const uint16_t arg)
 {
     return 0x0000 | (arg);
 }
-
 inline uint16_t Assembler::asm_of6(const uint16_t arg)
 {
     return 0x0000 | (arg & 0x001F);
 }
-
 inline uint8_t Assembler::asm_in8(const uint16_t arg)
 {
     return 0x0000 | (arg & 0x00FF);
 }
-
 inline uint16_t Assembler::asm_pc9(const uint16_t arg)
 {
     return 0x0000 | (arg & 0x01FF);
 }
-
 inline uint16_t Assembler::asm_pc11(const uint16_t arg)
 {
     return 0x0000 | (arg & 0x07FF);
 }
 
-// Instruction assembly
+/*
+ * asm_add()
+ * Assemble ADD instruction
+ */
 void Assembler::asm_add(const LineInfo& line)
 {
     Instr instr;
@@ -76,6 +73,10 @@ void Assembler::asm_add(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_and()
+ * Assemble AND instruction
+ */
 void Assembler::asm_and(const LineInfo& line)
 {
     Instr instr;
@@ -97,6 +98,10 @@ void Assembler::asm_and(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_br()
+ * Assemble BR instruction
+ */
 void Assembler::asm_br(const LineInfo& line)
 {
     Instr instr;
@@ -115,6 +120,10 @@ void Assembler::asm_br(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_jmp()
+ * Assemble JMP instruction
+ */
 void Assembler::asm_jmp(const LineInfo& line)
 {
     Instr instr;
@@ -132,6 +141,10 @@ void Assembler::asm_jmp(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_jsr()
+ * Assemble JSR instruction
+ */
 void Assembler::asm_jsr(const LineInfo& line)
 {
     Instr instr;
@@ -163,6 +176,10 @@ void Assembler::asm_jsr(const LineInfo& line)
 
 }
 
+/*
+ * asm_lea()
+ * Assemble LEA instruction
+ */
 void Assembler::asm_lea(const LineInfo& line)
 {
     Instr instr;
@@ -181,6 +198,10 @@ void Assembler::asm_lea(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_ld()
+ * Assemble LD instruction
+ */
 void Assembler::asm_ld(const LineInfo& line)
 {
     Instr instr;
@@ -199,6 +220,10 @@ void Assembler::asm_ld(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_ldr()
+ * Assemble LDR instruction
+ */
 void Assembler::asm_ldr(const LineInfo& line)
 {
     Instr instr;
@@ -217,6 +242,10 @@ void Assembler::asm_ldr(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_not()
+ * Assemble NOT instruction
+ */
 void Assembler::asm_not(const LineInfo& line)
 {
     Instr instr;
@@ -237,6 +266,10 @@ void Assembler::asm_not(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_st()
+ * Assemble ST instruction
+ */
 void Assembler::asm_st(const LineInfo& line)
 {
     Instr instr;
@@ -255,6 +288,10 @@ void Assembler::asm_st(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_str()
+ * Assemble STR instruction
+ */
 void Assembler::asm_str(const LineInfo& line)
 {
     Instr instr;
@@ -274,6 +311,10 @@ void Assembler::asm_str(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_sti()
+ * Assemble STI instruction
+ */
 void Assembler::asm_sti(const LineInfo& line)
 {
     Instr instr;
@@ -293,6 +334,10 @@ void Assembler::asm_sti(const LineInfo& line)
     this->program.add(instr);
 }
 
+/*
+ * asm_trap()
+ * Assemble TRAP instruction
+ */
 void Assembler::asm_trap(const LineInfo& line)
 {
     Instr instr;
@@ -310,7 +355,10 @@ void Assembler::asm_trap(const LineInfo& line)
     this->program.add(instr);
 }
 
-// ================ DIRECTIVES / PSUEDO OPS 
+/*
+ * dir_blkw()
+ * Assemble the BLKW directive
+ */
 void Assembler::dir_blkw(const LineInfo& line)
 {
     if(this->verbose)
@@ -321,9 +369,13 @@ void Assembler::dir_blkw(const LineInfo& line)
 
     unsigned int addr;
     for(addr = line.addr; addr < line.addr + line.imm; addr++)
-        this->program.writeMem(addr, 0xFFFF); // TODO: proper value
+        this->program.writeMem(addr, 0x0000);
 }
 
+/*
+ * dir_fill()
+ * Assemble the FILL directive
+ */
 void Assembler::dir_fill(const LineInfo& line)
 {
     if(this->verbose)
@@ -331,10 +383,13 @@ void Assembler::dir_fill(const LineInfo& line)
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
             line.line_num << ") assembling .FILL" << std::endl;
     }
-    // Next location in memory gets line.imm
     this->program.writeMem(line.addr, line.imm);
 }
 
+/*
+ * dir_orig()
+ * Assemble the ORIG directive
+ */
 void Assembler::dir_orig(const LineInfo& line)
 {
     if(this->verbose)
@@ -345,13 +400,24 @@ void Assembler::dir_orig(const LineInfo& line)
     this->start_addr = line.imm;
 }
 
+/*
+ * dir_stringz()
+ * Assemble the STRINGZ directive
+ */
 void Assembler::dir_stringz(const LineInfo& line)
 {
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
             line.line_num << ") assembling .STRINGZ" << std::endl;
-        std::cout << "NOT YET IMPLEMENTED" << std::endl;
+    }
+    
+    unsigned int addr, n;
+    n = 0;
+    for(addr = line.addr; addr < (line.addr + line.symbol.length()); ++addr)
+    {
+        this->program.writeMem(addr, line.symbol[n]);
+        n++;
     }
 }
 
@@ -363,8 +429,6 @@ void Assembler::assemble(void)
 {
     LineInfo cur_line;
     unsigned int num_lines, idx;
-
-    // First, resolve label addresses
 
     this->num_err = 0;
     num_lines = this->src_info.getNumLines();
@@ -394,6 +458,7 @@ void Assembler::assemble(void)
                 this->dir_fill(cur_line);
             else if(cur_line.opcode.mnemonic == ".ORIG")
                 this->dir_orig(cur_line);
+            continue;
         }
 
         // Handle opcodes 
