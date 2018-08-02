@@ -180,7 +180,7 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
     // (Next line) Text 
     oss << std::endl;
     oss << "Label [" << std::setw(16) << std::setfill(' ') << l.label << "] ";
-    oss << "Symbol[" << std::setw(16) << std::setfill(' ') << l.symbol << "] ";
+    oss << "Symbol[" << std::setfill(' ') << l.symbol << "] ";
 
     oss << std::endl;
     
