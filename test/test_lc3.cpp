@@ -46,26 +46,6 @@ unsigned int rand_interval(unsigned int min, unsigned int max)
     return min + (r / buckets);
 }
 
-// Helper function to generate sample Opcode table 
-OpcodeTable test_gen_opcode_table(void)
-{
-    OpcodeTable op_table;
-
-    Opcode op_list[] = {
-        {0x01, "ADD"},
-        {0x05, "AND"},
-        {0x00, "BR" },
-        {0x04, "JSR"},
-        {0x02, "LD" },
-        {0x06, "LDI"},
-        {0x0E, "LEA"}
-    };
-
-    for(const Opcode& op : op_list)
-        op_table.add(op);
-
-    return op_table;
-}
 
 TEST_F(TestLC3, test_init)
 {
@@ -90,7 +70,7 @@ TEST_F(TestLC3, test_load_mem_file)
 
     // Generate some dummy memory contents 
     std::cout << "Generating dummy memory contents....";
-    uint8_t* mem_contents = new uint8_t[mem_size];
+    uint16_t* mem_contents = new uint16_t[mem_size];
     for(unsigned int i = 0; i < mem_size; i++)
         mem_contents[i] = rand_interval(0, 255);
     std::cout << "done" << std::endl;
@@ -100,7 +80,7 @@ TEST_F(TestLC3, test_load_mem_file)
     std::ofstream outfile(this->mem_filename, std::ios::binary);
     if(outfile.is_open())
     {
-        outfile.write((char*) mem_contents, sizeof(uint8_t) * mem_size);
+        outfile.write((char*) mem_contents, sizeof(uint16_t) * mem_size);
         outfile.close();
     }
     else
@@ -118,7 +98,6 @@ TEST_F(TestLC3, test_load_mem_file)
     // Check contents
     for(unsigned int i = 0; i < mem_size; i++)
         ASSERT_EQ(mem_contents[i], lc3.readMem(i));
-
     std::cout << "done" << std::endl;
 
     delete[] mem_contents;
