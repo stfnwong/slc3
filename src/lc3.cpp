@@ -12,23 +12,29 @@
 /*
  * LC3Proc
  */
-//LC3Proc::LC3Proc()
-//{
-//    for(int r = 0; r < 8; r++)
-//        this->gpr[r] = 0;
-//    this->pc    = 0;
-//    this->flags = 0;
-//}
-//
-//LC3Proc::~LC3Proc() {} 
-//
-//LC3Proc::LC3Proc(const LC3Proc& that)
-//{
-//    for(int r = 0; r < 8; r++)
-//        this->gpr[r] = that.gpr[r];
-//    this->pc    = that.pc;
-//    this->flags = that.flags;
-//}
+LC3Proc::LC3Proc()
+{
+    for(int r = 0; r < 8; r++)
+        this->gpr[r] = 0;
+    this->pc    = 0;
+    this->mar   = 0;
+    this->mdr   = 0;
+    this->ir    = 0;
+    this->flags = 0;
+}
+
+LC3Proc::~LC3Proc() {} 
+
+LC3Proc::LC3Proc(const LC3Proc& that)
+{
+    for(int r = 0; r < 8; r++)
+        this->gpr[r] = that.gpr[r];
+    this->pc    = that.pc;
+    this->mar   = that.mar;
+    this->mdr   = that.mdr;
+    this->ir    = that.ir;
+    this->flags = that.flags;
+}
 
 //LC3::LC3(const uint16_t mem_size) : Machine()
 LC3::LC3(const uint16_t mem_size) 
@@ -182,70 +188,90 @@ std::vector<uint16_t> LC3::dumpMem(void) const
 }
 
 // TODO: fetch, decode, exec functions?
+void LC3::fetch(void)
+{
+    this->cpu.mar = this->mem[this->cpu.pc];
+    this->cpu.pc++;
+    this->cpu.mdr = this->mem[this->cpu.mar];
+    this->cpu.ir  = this->cpu.mdr;
+}
 
-
-
-
-// Execute 
-void LC3::execute(const uint16_t instr)
+void LC3::decode(void)
 {
     uint8_t dst;
     uint8_t sr1, sr2;
     uint8_t imm5;
     uint16_t pc9;
-    uint16_t op;
+    uint8_t opcode;
 
-    op = this->instr_get_opcode(instr);
-    switch(op)
+    opcode = this->instr_get_opcode(this->cpu.ir);
+    switch(opcode)
     {
         case LC3_ADD:
-            dst = this->instr_get_dest(instr);
-            sr1 = this->instr_get_sr1(instr);
-            if(this->instr_is_imm(instr))
+            dst = this->instr_get_dest(this->cpu.ir);
+            sr1 = this->instr_get_sr1(this->cpu.ir);
+            if(this->instr_is_imm(this->cpu.ir))
             {
-                imm5 = this->instr_get_imm5(instr);
+                imm5 = this->instr_get_imm5(this->cpu.ir);
                 this->cpu.gpr[dst] = this->cpu.gpr[sr1] + imm5;
             }
             else
             {
-                sr2 = this->instr_get_sr2(instr);
-
+                sr2 = this->instr_get_sr2(this->cpu.ir);
                 this->cpu.gpr[dst] = this->cpu.gpr[sr1] + this->cpu.gpr[sr2];
             }
             this->set_flags(this->cpu.gpr[dst]);
             break;
 
         case LC3_AND:
-            dst = this->instr_get_dest(instr);
-            sr1 = this->instr_get_sr1(instr);
-            if(this->instr_is_imm(instr))
+            dst = this->instr_get_dest(this->cpu.ir);
+            sr1 = this->instr_get_sr1(this->cpu.ir);
+            if(this->instr_is_imm(this->cpu.ir))
             {
-                imm5 = this->instr_get_imm5(instr);
+                imm5 = this->instr_get_imm5(this->cpu.ir);
                 this->cpu.gpr[dst] = this->cpu.gpr[sr1] & imm5;
             }
             else
             {
-                sr2 = this->instr_get_sr2(instr);
-
+                sr2 = this->instr_get_sr2(this->cpu.ir);
                 this->cpu.gpr[dst] = this->cpu.gpr[sr1] & this->cpu.gpr[sr2];
             }
             this->set_flags(this->cpu.gpr[dst]);
             break;
 
-
         // Loads
         case LC3_LD:
-            dst = this->instr_get_dest(instr);
-            pc9 = this->instr_get_pc9(instr);
+            dst = this->instr_get_dest(this->cpu.ir);
+            pc9 = this->instr_get_pc9(this->cpu.ir);
             this->cpu.gpr[dst] = this->mem[this->cpu.pc + pc9];
             this->set_flags(this->cpu.gpr[dst]);
+            break;
+
+        case LC3_NOT:
+            dst = this->instr_get_dest(this->cpu.ir);
+            sr1 = this->instr_get_sr1(this->cpu.ir);
+            this->cpu.gpr[dst] = ~sr1;
+
             break;
 
         default:
             std::cerr << "Invalid opcode [" << std::hex << 
                 std::setw(4) << std::setfill('0') << 
-                op << std::endl;
+                opcode << std::endl;
             break;
+    }
+}
+
+// Execute 
+void LC3::execute(const uint16_t instr)
+{
+
+    uint16_t op;
+
+    op = this->instr_get_opcode(instr);
+    switch(op)
+    {
+
     }
 }
 

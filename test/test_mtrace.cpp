@@ -31,6 +31,12 @@ bool lc3proc_equal(const LC3Proc& p1, const LC3Proc& p2)
         return false;
     if(p1.flags != p2.flags)
         return false;
+    if(p1.mar != p2.mar)
+        return false;
+    if(p1.mdr != p2.mdr)
+        return false;
+    if(p1.ir != p2.ir)
+        return false;
     for(int g = 0; g < 8; g++)
     {
         if(p1.gpr[g] != p2.gpr[g])

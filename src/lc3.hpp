@@ -104,26 +104,23 @@ const Opcode lc3_psuedo_op_list[] = {
 };
 
 // LC3 CPU State
-//class LC3Proc:
-//{
-//    public:
-//        uint16_t gpr[8];
-//        uint16_t pc;
-//        uint8_t  flags;
-//        
-//    public:
-//        LC3Proc();
-//        ~LC3Proc();
-//        LC3Proc(const LC3Proc& that);
-//
-//};
-
-typedef struct 
+class LC3Proc
 {
-    uint16_t gpr[8];
-    uint16_t pc;
-    uint8_t  flags;
-} LC3Proc;
+    public:
+        uint16_t gpr[8];
+        uint16_t pc;
+        uint16_t mar;
+        uint16_t mdr;
+        uint16_t ir;
+        uint8_t  flags;
+        
+    public:
+        LC3Proc();
+        ~LC3Proc();
+        LC3Proc(const LC3Proc& that);
+        void dump(const std::string& filename);
+};
+
 
 //class LC3 : public Machine
 //FIXME I've broken the inheritance link for the moment
@@ -159,7 +156,7 @@ class LC3
 
     private:
         // Execution cycle 
-        void fectch(void);
+        void fetch(void);
         void decode(void);
         void eval(void);
         void operand_fetch(void);
