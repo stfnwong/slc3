@@ -102,7 +102,7 @@ std::string LC3Proc::toString(void) const
 {
     std::ostringstream oss;
     // Processor state 
-    oss << "pc :   ir :   flags: mar    mdr    sr1    sr2    dst" << std::endl;
+    oss << "pc :   ir :   flags: mar    mdr    sr1    sr2    dst   op" << std::endl;
     oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->pc << " ";
     oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->ir << " ";
     // Flags 
@@ -126,6 +126,7 @@ std::string LC3Proc::toString(void) const
     oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->sr1 << " ";
     oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->sr2 << " ";
     oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->dst << " ";
+    oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->cur_opcode << " ";
     // Next line 
     oss << std::endl;
     // Register contents 
@@ -200,6 +201,10 @@ inline uint8_t LC3::instr_get_sr2(const uint16_t instr) const
 inline uint8_t LC3::instr_get_imm5(const uint16_t instr) const
 {
     return (instr & 0x001F);
+}
+inline uint8_t LC3::instr_get_of6(const uint16_t instr) const
+{
+    return (instr & 0x003F);
 }
 inline uint16_t LC3::instr_get_pc9(const uint16_t instr) const
 {
@@ -316,112 +321,253 @@ std::vector<uint16_t> LC3::dumpMem(void) const
     return mem_dump;
 }
 
-// TODO: fetch, decode, exec functions?
 void LC3::fetch(void)
 {
     if(this->verbose)
         std::cout << "[" << __FUNCTION__ << "] FETCHing next instruction" << std::endl; 
 
-    this->state.mar = this->mem[this->state.pc];
+    //this->state.mar = this->mem[this->state.pc];
     this->state.pc++;
     this->state.mdr = this->mem[this->state.mar];
     this->state.ir  = this->state.mdr;
 }
 
-uint8_t LC3::decode(void)
+void LC3::decode(void)
 {
-    return this->instr_get_opcode(this->state.ir);
-}
+    this->state.cur_opcode = this->instr_get_opcode(this->state.ir);
 
-void LC3::eval_addr(void)
-{
-    uint16_t mar_val;
-    //mar_val = this->sext5(
-}
-
-// Execute 
-void LC3::execute(const uint8_t opcode)
-{
-    uint8_t imm5;
-    uint16_t pc9;
-
-    switch(opcode)
+    // Setup register values for this opcode
+    switch(this->state.cur_opcode)
     {
         case LC3_ADD:
             this->state.dst = this->instr_get_dest(this->state.ir);
             this->state.sr1 = this->instr_get_sr1(this->state.ir);
             if(this->instr_is_imm(this->state.ir))
-            {
-                imm5 = this->instr_get_imm5(this->state.ir);
-                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] + imm5;
-            }
+                this->state.imm = this->sext5(this->instr_get_imm5(this->state.ir));
             else
-            {
                 this->state.sr2 = this->instr_get_sr2(this->state.ir);
-                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] + this->state.gpr[this->state.sr2];
-            }
-            this->set_flags(this->state.gpr[this->state.dst]);
+
             break;
 
         case LC3_AND:
             this->state.dst = this->instr_get_dest(this->state.ir);
             this->state.sr1 = this->instr_get_sr1(this->state.ir);
             if(this->instr_is_imm(this->state.ir))
-            {
-                imm5 = this->instr_get_imm5(this->state.ir);
-                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] & imm5;
-            }
+                this->state.imm  = this->sext5(this->instr_get_imm5(this->state.ir));
             else
-            {
                 this->state.sr2 = this->instr_get_sr2(this->state.ir);
-                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] & this->state.gpr[this->state.sr2];
-            }
-            this->set_flags(this->state.gpr[this->state.dst]);
+
             break;
 
-        // Loads
+        case LC3_LEA:
+            this->state.dst = this->instr_get_dest(this->state.ir);
+            this->state.imm = this->sext9(this->instr_get_pc9(this->state.ir));
+            this->state.sr1 = this->instr_get_sr1(this->state.ir);
+            break;
+
         case LC3_LD:
             this->state.dst = this->instr_get_dest(this->state.ir);
-            pc9 = this->instr_get_pc9(this->state.ir);
-            this->state.gpr[this->state.dst] = this->mem[this->state.pc + pc9];
-            this->set_flags(this->state.gpr[this->state.dst]);
+            this->state.imm = this->sext9(this->instr_get_pc9(this->state.ir));
             break;
 
+        case LC3_LDI:
+            this->state.dst = this->instr_get_dest(this->state.ir);
+            this->state.imm = this->sext9(this->instr_get_pc9(this->state.ir));
+            break;
+
+        case LC3_LDR:
+            this->state.dst = this->instr_get_dest(this->state.ir);
+            this->state.sr1 = this->instr_get_sr1(this->state.ir); //base
+            this->state.imm = this->sext6(this->instr_get_of6(this->state.ir));
+            break;
+            
         case LC3_NOT:
             this->state.dst = this->instr_get_dest(this->state.ir);
             this->state.sr1 = this->instr_get_sr1(this->state.ir);
-            this->state.gpr[this->state.dst] = ~this->state.sr1;
+            break;
 
+        case LC3_ST:
+            this->state.mar = this->state.imm + this->state.pc;
+            break;
+
+        case LC3_STI:
+            this->state.mar = this->state.imm + this->state.pc;
+            break;
+
+        case LC3_STR:
+            this->state.mar = this->state.imm + this->state.gpr[this->state.sr1];
+            break;
+
+        default:
+            std::cout << "[" << __FUNCTION__ << "] invalid opcode <0x"
+                << std::hex << std::setw(4) << std::setfill('0') 
+                << this->state.cur_opcode << std::endl;
+            break;
+    }
+}
+
+void LC3::eval_addr(void)
+{
+    switch(this->state.cur_opcode)
+    {
+        // Instructions that have no EVAL_ADDR actions
+        case LC3_ADD:
+        case LC3_AND:
+            break;
+
+        case LC3_LD:
+            this->state.mar = this->state.imm + this->state.pc;
+            break;
+
+        case LC3_LDI:
+            this->state.mar = this->state.imm + this->state.pc;
+            break;
+
+        case LC3_LDR:
+            // DR, BaseR, of6
+            this->state.mar = this->state.imm + this->state.gpr[this->state.sr1];
+            break;
+
+        case LC3_NOT:       // No EVAL_ADDR actions
+            break;
+
+        case LC3_ST:
+            this->state.mar = this->state.imm + this->state.pc;
+            break;
+
+        case LC3_STI:
+            this->state.mar = this->state.imm + this->state.pc;
+            break;
+
+        case LC3_STR:
+            // DR, BaseR, of6
+            this->state.mar = this->state.imm + this->state.gpr[this->state.sr1];
+            break;
+
+        default:
+            std::cout << "[" << __FUNCTION__ << "] invalid opcode <0x"
+                << std::hex << std::setw(4) << std::setfill('0')
+                << this->state.cur_opcode << std::endl;
+            break;
+    }
+    
+}
+
+// Execute 
+void LC3::execute(void)
+{
+    // Execute the instruction
+    switch(this->state.cur_opcode)
+    {
+        case LC3_ADD:
+            if(this->instr_is_imm(this->state.ir))
+                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] + this->state.imm;
+            else
+                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] + this->state.gpr[this->state.sr2];
+            break;
+
+        case LC3_AND:
+            if(this->instr_is_imm(this->state.ir))
+                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] & this->state.imm;
+            else
+                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] & this->state.gpr[this->state.sr2];
+            break;
+
+        case LC3_LEA:
+            break;
+
+
+        // Instructions that have no EXECUTE phase 
+        case LC3_LD:
+        case LC3_LDI:
+        case LC3_LDR:
+            break;
+
+        case LC3_NOT:
+            this->state.gpr[this->state.dst] = ~this->state.sr1;
+            break;
+
+        case LC3_ST:
             break;
 
         default:
             std::cerr << "Invalid opcode [" << std::hex << 
                 std::setw(4) << std::setfill('0') << 
-                opcode << std::endl;
+                this->state.cur_opcode << std::endl;
             break;
     }
+    // Set flags 
+    this->set_flags(this->state.gpr[this->state.dst]);
 }
 
 void LC3::store(void)
 {
+    switch(this->state.cur_opcode)
+    {
+        // Instructions that have no STORE phase 
+        case LC3_ADD:
+        case LC3_AND:
+        case LC3_BR:
+        case LC3_JMP_RET:
+        case LC3_JSR:
+            break;
+
+        case LC3_LEA:
+            break;
+
+        case LC3_LD:
+            this->state.gpr[this->state.dst] = this->mem[this->state.pc + this->state.imm];
+            break;
+
+        case LC3_LDI:
+            //this->state.gpr[this->state.dst] = this->mem[this->state.imm];
+            this->state.gpr[this->state.dst] = this->mem[this->state.mar];
+            break;
+
+        case LC3_LDR:
+            this->state.gpr[this->state.dst] = this->mem[this->state.sr1 + this->state.imm];
+            break;
+
+        case LC3_NOT:
+            break;
+
+        case LC3_RTI:
+            break;
+            
+        case LC3_ST:
+            this->mem[this->state.imm] = this->state.gpr[this->state.sr1];
+            break;
+
+        case LC3_STI:
+            this->mem[this->state.mar] = this->state.gpr[this->state.sr1];
+            break;
+
+        case LC3_STR:
+            this->mem[this->state.mar] = this->state.gpr[this->state.sr1];
+            break;
 
 
+        default:
+            std::cerr << "Invalid opcode [" << std::hex << 
+                std::setw(4) << std::setfill('0') << 
+                this->state.cur_opcode << std::endl;
+    }
 }
 
 // Run an instruction cycle 
-int LC3::runInstr(void)
+int LC3::runCycle(void)
 {
-    int status = 0;
-    uint8_t opcode;
+    int status = 0;     // TODO: how to set incorrect status?
 
     while(1)
     {
         this->fetch();
-        opcode = this->decode();
+        this->decode();
         this->eval_addr();
         //this->operand_fetch();
-        this->execute(opcode);      
+        this->execute();
         this->store();
+        // TODO: check execution errors?
     }
 
     return status;

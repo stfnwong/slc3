@@ -116,7 +116,9 @@ class LC3Proc
         // The source and dest registers for ALU
         uint16_t sr1;
         uint16_t sr2;
+        uint16_t imm;
         uint8_t  dst;
+        uint8_t  cur_opcode;
         
     public:
         LC3Proc();
@@ -184,6 +186,7 @@ class LC3
         inline uint8_t  instr_get_sr1(const uint16_t instr) const;
         inline uint8_t  instr_get_sr2(const uint16_t instr) const;
         inline uint8_t  instr_get_imm5(const uint16_t instr) const;
+        inline uint8_t  instr_get_of6(const uint16_t instr) const;
         inline uint16_t instr_get_pc9(const uint16_t instr) const;
         inline uint16_t instr_get_pc11(const uint16_t instr) const;
         // Set flags 
@@ -202,10 +205,10 @@ class LC3
     private:
         // Execution cycle 
         void    fetch(void);
-        uint8_t decode(void);
+        void    decode(void);
         void    eval_addr(void);
         //void    operand_fetch(void);
-        void    execute(const uint8_t opcode);
+        void    execute(void);
         void    store(void);
 
     public:
@@ -214,15 +217,13 @@ class LC3
 
         // Reset CPU state 
         void     resetCPU(void);
-        int      runInstr(void);        // run the next instruction
+        int      runCycle(void);        // run the next instruction
         // Memory 
         void     resetMem(void);
         void     writeMem(const uint16_t adr, const uint16_t val);
         uint16_t readMem(const uint16_t adr) const;
         int      loadMemFile(const std::string& filename, int offset);
         std::vector<uint16_t> dumpMem(void) const;
-        // Execute loop
-        //void     execute(const uint16_t instr);
 
         // Getters 
         LC3Proc  getProcState(void) const;
