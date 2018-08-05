@@ -6,11 +6,13 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 #include <fstream>
 #include "lc3.hpp"
 
 /*
  * LC3Proc
+ * Processor state object for LC3
  */
 LC3Proc::LC3Proc()
 {
@@ -36,7 +38,110 @@ LC3Proc::LC3Proc(const LC3Proc& that)
     this->flags = that.flags;
 }
 
-//LC3::LC3(const uint16_t mem_size) : Machine()
+void LC3Proc::diff(const LC3Proc& that)
+{
+    for(int r = 0; r < 8; r++)
+    {
+        if(this->gpr[r] != that.gpr[r])
+        {
+            std::cout << "[" << __FUNCTION__ << "] register " 
+                << r << std::endl;
+        }
+    }
+    if(this->pc != that.pc)
+    {
+        std::cout << "[" << __FUNCTION__ << "] this->pc  <0x" << 
+            std::hex << std::setw(4) << this->pc << "> != that.pc <0x" <<
+            std::hex << std::setw(4) << that.pc << std::endl;
+    }
+    if(this->mar != that.mar)
+    {
+        std::cout << "[" << __FUNCTION__ << "] this->mar <0x" << 
+            std::hex << std::setw(4) << this->mar << "> != that.mar <0x" <<
+            std::hex << std::setw(4) << that.mar << std::endl;
+    }
+    if(this->mdr != that.mdr)
+    {
+        std::cout << "[" << __FUNCTION__ << "] this->mdr <0x" << 
+            std::hex << std::setw(4) << this->mdr << "> != that.mdr <0x" <<
+            std::hex << std::setw(4) << that.mdr << std::endl;
+    }
+    if(this->ir != that.ir)
+    {
+        std::cout << "[" << __FUNCTION__ << "] this->ir  <0x" << 
+            std::hex << std::setw(4) << this->ir << "> != that.ir <0x" <<
+            std::hex << std::setw(4) << that.ir << std::endl;
+    }
+    if(this->flags != that.flags)
+    {
+        std::cout << "[" << __FUNCTION__ << "] this->flags <0x" << 
+            std::hex << std::setw(4) << this->flags << "> != that.flags <0x" <<
+            std::hex << std::setw(4) << that.flags << std::endl;
+    }
+    if(this->sr1 != that.sr1)
+    {
+        std::cout << "[" << __FUNCTION__ << "] this->sr1 <0x" << 
+            std::hex << std::setw(4) << this->sr1 << "> != that.sr1 <0x" <<
+            std::hex << std::setw(4) << that.sr1 << std::endl;
+    }
+    if(this->sr2 != that.sr2)
+    {
+        std::cout << "[" << __FUNCTION__ << "] this->sr2 <0x" << 
+            std::hex << std::setw(4) << this->sr2 << "> != that.sr2 <0x" <<
+            std::hex << std::setw(4) << that.sr2 << std::endl;
+    }
+    if(this->dst != that.dst)
+    {
+        std::cout << "[" << __FUNCTION__ << "] this->dst <0x" << 
+            std::hex << std::setw(4) << this->dst << "> != that.dst <0x" <<
+            std::hex << std::setw(4) << that.dst << std::endl;
+    }
+}
+
+std::string LC3Proc::toString(void) const
+{
+    std::ostringstream oss;
+    // Processor state 
+    oss << "pc :   ir :   flags: mar    mdr    sr1    sr2    dst" << std::endl;
+    oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->pc << " ";
+    oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->ir << " ";
+    // Flags 
+    oss << "[";
+    if(this->flags & LC3_FLAG_N)
+        oss << "n";
+    else 
+        oss << ".";
+    if(this->flags & LC3_FLAG_Z)
+        oss << "z";
+    else 
+        oss << ".";
+    if(this->flags & LC3_FLAG_P)
+        oss << "p";
+    else 
+        oss << ".";
+    oss << "]  ";
+
+    oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->mar << " ";
+    oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->mdr << " ";
+    oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->sr1 << " ";
+    oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->sr2 << " ";
+    oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->dst << " ";
+    // Next line 
+    oss << std::endl;
+    // Register contents 
+    oss << "r[0]   r[1]   r[2]   r[3]   r[4]   r[5]   r[6]   r[7]" << std::endl;
+    for(int r = 0; r < 8; ++r)
+        oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << this->gpr[r] << " ";
+    // End
+    oss << std::endl << std::endl;
+
+    return oss.str();
+}
+
+/*
+ * LC3 
+ * Constructor for and LC3 object
+ */
 LC3::LC3(const uint16_t mem_size) 
 {
     this->mem_size = mem_size;
@@ -57,10 +162,10 @@ void LC3::allocMem(void)
 
 void LC3::resetCPU(void)
 {
-    this->cpu.pc    = 0;
-    this->cpu.flags = 0;
+    this->state.pc    = 0;
+    this->state.flags = 0;
     for(int i = 0; i < 8; i++)
-        this->cpu.gpr[i] = 0;
+        this->state.gpr[i] = 0;
 }
 
 // ========  Instruction decode 
@@ -106,15 +211,39 @@ inline uint16_t LC3::instr_get_pc11(const uint16_t instr) const
 }
 inline void LC3::set_flags(const uint8_t val)
 {
-    this->cpu.flags = (val == 0) ?
-        (this->cpu.flags | LC3_FLAG_Z) : 
-         this->cpu.flags;
-    this->cpu.flags = (val > 0) ? 
-        (this->cpu.flags | LC3_FLAG_P) : 
-         this->cpu.flags;
-    this->cpu.flags = (val < 0) ? 
-        (this->cpu.flags | LC3_FLAG_N) : 
-        this->cpu.flags;
+    this->state.flags = (val == 0) ?
+        (this->state.flags | LC3_FLAG_Z) : 
+         this->state.flags;
+    this->state.flags = (val > 0) ? 
+        (this->state.flags | LC3_FLAG_P) : 
+         this->state.flags;
+    this->state.flags = (val < 0) ? 
+        (this->state.flags | LC3_FLAG_N) : 
+        this->state.flags;
+}
+
+/*
+ * sign extension functions 
+ */
+inline uint16_t LC3::sext5(const uint8_t v) const
+{
+    return (v & 0x0010) ? (v | 0xFFE0) : v;
+}
+inline uint16_t LC3::sext6(const uint8_t v) const
+{
+    return (v & 0x0020) ? (v | 0xFFC0) : v;
+}
+inline uint16_t LC3::sext9(const uint16_t v) const
+{
+    return (v & 0x0100) ? (v | 0xFE00) : v;
+}
+inline uint16_t LC3::sext11(const uint16_t v) const
+{
+    return (v & 0x0400) ? (v | 0xF800) : v;
+}
+inline uint16_t LC3::zext8(const uint8_t v) const
+{
+    return (0x0000 | v);
 }
 
 /*
@@ -169,7 +298,7 @@ int LC3::loadMemFile(const std::string& filename, int offset)
         infile.read((char*) &this->mem[offset], sizeof(uint16_t) * num_bytes);
     }
     catch(std::ios_base::failure& e) {
-        std::cerr << "LC3::loadMemFile caught execption [%s]" << 
+        std::cerr << "[" << __FUNCTION__ << "] caught execption [%s]" << 
             e.what() << std::endl;
         status = -1;
     }
@@ -190,67 +319,78 @@ std::vector<uint16_t> LC3::dumpMem(void) const
 // TODO: fetch, decode, exec functions?
 void LC3::fetch(void)
 {
-    this->cpu.mar = this->mem[this->cpu.pc];
-    this->cpu.pc++;
-    this->cpu.mdr = this->mem[this->cpu.mar];
-    this->cpu.ir  = this->cpu.mdr;
+    if(this->verbose)
+        std::cout << "[" << __FUNCTION__ << "] FETCHing next instruction" << std::endl; 
+
+    this->state.mar = this->mem[this->state.pc];
+    this->state.pc++;
+    this->state.mdr = this->mem[this->state.mar];
+    this->state.ir  = this->state.mdr;
 }
 
-void LC3::decode(void)
+uint8_t LC3::decode(void)
 {
-    uint8_t dst;
-    uint8_t sr1, sr2;
+    return this->instr_get_opcode(this->state.ir);
+}
+
+void LC3::eval_addr(void)
+{
+    uint16_t mar_val;
+    //mar_val = this->sext5(
+}
+
+// Execute 
+void LC3::execute(const uint8_t opcode)
+{
     uint8_t imm5;
     uint16_t pc9;
-    uint8_t opcode;
 
-    opcode = this->instr_get_opcode(this->cpu.ir);
     switch(opcode)
     {
         case LC3_ADD:
-            dst = this->instr_get_dest(this->cpu.ir);
-            sr1 = this->instr_get_sr1(this->cpu.ir);
-            if(this->instr_is_imm(this->cpu.ir))
+            this->state.dst = this->instr_get_dest(this->state.ir);
+            this->state.sr1 = this->instr_get_sr1(this->state.ir);
+            if(this->instr_is_imm(this->state.ir))
             {
-                imm5 = this->instr_get_imm5(this->cpu.ir);
-                this->cpu.gpr[dst] = this->cpu.gpr[sr1] + imm5;
+                imm5 = this->instr_get_imm5(this->state.ir);
+                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] + imm5;
             }
             else
             {
-                sr2 = this->instr_get_sr2(this->cpu.ir);
-                this->cpu.gpr[dst] = this->cpu.gpr[sr1] + this->cpu.gpr[sr2];
+                this->state.sr2 = this->instr_get_sr2(this->state.ir);
+                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] + this->state.gpr[this->state.sr2];
             }
-            this->set_flags(this->cpu.gpr[dst]);
+            this->set_flags(this->state.gpr[this->state.dst]);
             break;
 
         case LC3_AND:
-            dst = this->instr_get_dest(this->cpu.ir);
-            sr1 = this->instr_get_sr1(this->cpu.ir);
-            if(this->instr_is_imm(this->cpu.ir))
+            this->state.dst = this->instr_get_dest(this->state.ir);
+            this->state.sr1 = this->instr_get_sr1(this->state.ir);
+            if(this->instr_is_imm(this->state.ir))
             {
-                imm5 = this->instr_get_imm5(this->cpu.ir);
-                this->cpu.gpr[dst] = this->cpu.gpr[sr1] & imm5;
+                imm5 = this->instr_get_imm5(this->state.ir);
+                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] & imm5;
             }
             else
             {
-                sr2 = this->instr_get_sr2(this->cpu.ir);
-                this->cpu.gpr[dst] = this->cpu.gpr[sr1] & this->cpu.gpr[sr2];
+                this->state.sr2 = this->instr_get_sr2(this->state.ir);
+                this->state.gpr[this->state.dst] = this->state.gpr[this->state.sr1] & this->state.gpr[this->state.sr2];
             }
-            this->set_flags(this->cpu.gpr[dst]);
+            this->set_flags(this->state.gpr[this->state.dst]);
             break;
 
         // Loads
         case LC3_LD:
-            dst = this->instr_get_dest(this->cpu.ir);
-            pc9 = this->instr_get_pc9(this->cpu.ir);
-            this->cpu.gpr[dst] = this->mem[this->cpu.pc + pc9];
-            this->set_flags(this->cpu.gpr[dst]);
+            this->state.dst = this->instr_get_dest(this->state.ir);
+            pc9 = this->instr_get_pc9(this->state.ir);
+            this->state.gpr[this->state.dst] = this->mem[this->state.pc + pc9];
+            this->set_flags(this->state.gpr[this->state.dst]);
             break;
 
         case LC3_NOT:
-            dst = this->instr_get_dest(this->cpu.ir);
-            sr1 = this->instr_get_sr1(this->cpu.ir);
-            this->cpu.gpr[dst] = ~sr1;
+            this->state.dst = this->instr_get_dest(this->state.ir);
+            this->state.sr1 = this->instr_get_sr1(this->state.ir);
+            this->state.gpr[this->state.dst] = ~this->state.sr1;
 
             break;
 
@@ -262,23 +402,35 @@ void LC3::decode(void)
     }
 }
 
-// Execute 
-void LC3::execute(const uint16_t instr)
+void LC3::store(void)
 {
 
-    uint16_t op;
 
-    op = this->instr_get_opcode(instr);
-    switch(op)
+}
+
+// Run an instruction cycle 
+int LC3::runInstr(void)
+{
+    int status = 0;
+    uint8_t opcode;
+
+    while(1)
     {
-
+        this->fetch();
+        opcode = this->decode();
+        this->eval_addr();
+        //this->operand_fetch();
+        this->execute(opcode);      
+        this->store();
     }
+
+    return status;
 }
 
 // Getters 
 LC3Proc LC3::getProcState(void) const
 {
-    return this->cpu;
+    return this->state;
 }
 
 uint16_t LC3::getMemSize(void) const
@@ -288,19 +440,19 @@ uint16_t LC3::getMemSize(void) const
 
 uint8_t LC3::getFlags(void) const
 {
-    return this->cpu.flags;
+    return this->state.flags;
 }
 bool LC3::getZero(void) const
 {
-    return (this->cpu.flags & LC3_FLAG_Z) ? true : false;
+    return (this->state.flags & LC3_FLAG_Z) ? true : false;
 }
 bool LC3::getPos(void) const
 {
-    return (this->cpu.flags & LC3_FLAG_P) ? true : false;
+    return (this->state.flags & LC3_FLAG_P) ? true : false;
 }
 bool LC3::getNeg(void) const
 {
-    return (this->cpu.flags & LC3_FLAG_N) ? true : false;
+    return (this->state.flags & LC3_FLAG_N) ? true : false;
 }
 
 //std::vector<Opcode> LC3::getOpcodes(void) const
@@ -312,4 +464,15 @@ bool LC3::getNeg(void) const
 OpcodeTable LC3::getOpTable(void) const
 {
     return this->op_table;
+}
+
+// Verbose 
+void LC3::setVerbose(const bool v)
+{
+    this->verbose = v;
+}
+
+bool LC3::getVerbose(void) const
+{
+    return this->verbose;
 }

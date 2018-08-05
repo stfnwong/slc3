@@ -113,12 +113,45 @@ class LC3Proc
         uint16_t mdr;
         uint16_t ir;
         uint8_t  flags;
+        // The source and dest registers for ALU
+        uint16_t sr1;
+        uint16_t sr2;
+        uint8_t  dst;
         
     public:
         LC3Proc();
         ~LC3Proc();
         LC3Proc(const LC3Proc& that);
         void dump(const std::string& filename);
+        void diff(const LC3Proc& that);
+        std::string toString(void) const;
+
+        bool operator==(const LC3Proc& that)
+        {
+            for(int r = 0; r < 8; r++)
+            {
+                if(this->gpr[r] != that.gpr[r])
+                    return false;
+            }
+            if(this->pc != that.pc)
+                return false;
+            if(this->mar != that.mar)
+                return false;
+            if(this->mdr != that.mdr)
+                return false;
+            if(this->ir != that.ir)
+                return false;
+            if(this->flags != that.flags)
+                return false;
+            if(this->sr1 != that.sr1)
+                return false;
+            if(this->sr2 != that.sr2)
+                return false;
+            if(this->dst != that.dst)
+                return false;
+
+            return true;
+        }
 };
 
 
@@ -128,20 +161,24 @@ class LC3Proc
 class LC3 
 {
     private:
+        // Object settings
+        bool verbose;
+
+    private:
         // Memory
         uint16_t* mem;
         uint32_t  mem_size;
         void      allocMem(void);
         // Processor
-        LC3Proc     cpu;
+        LC3Proc     state;
         OpcodeTable op_table;
         OpcodeTable psuedo_op_table;
 
     private:
         // Instruction decode helper functions 
+        inline uint8_t  instr_get_opcode(const uint16_t instr) const;
         inline bool     instr_is_imm(const uint16_t instr) const;
         inline bool     instr_is_jmp(const uint16_t instr) const;
-        inline uint8_t  instr_get_opcode(const uint16_t instr) const;
         inline uint8_t  instr_get_dest(const uint16_t instr) const;
         inline uint8_t  instr_get_baser(const uint16_t instr) const;
         inline uint8_t  instr_get_sr1(const uint16_t instr) const;
@@ -153,15 +190,23 @@ class LC3
         inline void     set_flags(const uint8_t val);
         // Build opcode table 
         void            build_op_table(void);
+        
+    private:
+        // Sign extension
+        inline uint16_t sext5(const uint8_t v) const;
+        inline uint16_t sext6(const uint8_t v) const;
+        inline uint16_t sext9(const uint16_t v) const;
+        inline uint16_t sext11(const uint16_t v) const;
+        inline uint16_t zext8(const uint8_t v) const;
 
     private:
         // Execution cycle 
-        void fetch(void);
-        void decode(void);
-        void eval(void);
-        void operand_fetch(void);
-        void exec(void);
-        void store(void);
+        void    fetch(void);
+        uint8_t decode(void);
+        void    eval_addr(void);
+        //void    operand_fetch(void);
+        void    execute(const uint8_t opcode);
+        void    store(void);
 
     public:
         LC3(const uint16_t mem_size);
@@ -169,6 +214,7 @@ class LC3
 
         // Reset CPU state 
         void     resetCPU(void);
+        int      runInstr(void);        // run the next instruction
         // Memory 
         void     resetMem(void);
         void     writeMem(const uint16_t adr, const uint16_t val);
@@ -176,7 +222,7 @@ class LC3
         int      loadMemFile(const std::string& filename, int offset);
         std::vector<uint16_t> dumpMem(void) const;
         // Execute loop
-        void     execute(const uint16_t instr);
+        //void     execute(const uint16_t instr);
 
         // Getters 
         LC3Proc  getProcState(void) const;
@@ -188,6 +234,10 @@ class LC3
 
         // Opcode Table (public interface)
         OpcodeTable getOpTable(void) const; //get complete table
+
+        // Verbose 
+        void     setVerbose(const bool v);
+        bool     getVerbose(void) const;
 };
 
 #endif /*__LC3_HPP*/

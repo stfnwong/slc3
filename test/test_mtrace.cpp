@@ -74,6 +74,13 @@ TEST_F(TestMTrace, test_add)
     for(unsigned int t = 0; t < this->trace_size; t++)
         trace.add(test_trace[t]);
 
+    std::cout << "Dumping processor states to console... " << std::endl;
+    for(unsigned int t = 0; t < this->trace_size; t++)
+    {
+        LC3Proc p = trace.get(t);
+        std::cout << p.toString();
+    }
+
     std::vector<LC3Proc> trace_dump = trace.dump();
     for(unsigned int t = 0; t < trace_dump.size(); t++)
         ASSERT_EQ(true, lc3proc_equal(trace_dump[t], test_trace[t]));
@@ -81,7 +88,9 @@ TEST_F(TestMTrace, test_add)
     // Now try adding more data so that the trace 'wraps'
     trace.add(test_trace[this->trace_size + 1]);
     trace_dump = trace.dump();
-    ASSERT_EQ(true, lc3proc_equal(trace_dump[0], test_trace[this->trace_size+1]));
+    //ASSERT_EQ(true, lc3proc_equal(trace_dump[0], test_trace[this->trace_size+1]));
+    trace_dump[0].diff(test_trace[this->trace_size+1]);
+    ASSERT_EQ(true, trace_dump[0] == test_trace[this->trace_size+1]);
     ASSERT_EQ(this->trace_size, trace.getTraceSize());
     // Offset the PC by 256
     for(unsigned int t = 0; t < test_trace.size(); t++)

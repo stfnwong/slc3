@@ -27,6 +27,7 @@ template <typename T> class MTrace
         // Update trace 
         void           add(const T& state);
         std::vector<T> dump(void);
+        T              get(const unsigned int idx) const;
         void           clear(void);
         // TODO : dump in (time) order?
 
@@ -60,6 +61,12 @@ template <typename T> std::vector<T> MTrace<T>::dump(void)
         d[i] = this->buffer[i];
 
     return d;
+}
+
+template <typename T> T MTrace<T>::get(const unsigned idx) const
+{
+    //return this->buffer[idx % this->buffer.size()];
+    return this->buffer[idx];
 }
 
 template <typename T> void MTrace<T>::clear(void)
