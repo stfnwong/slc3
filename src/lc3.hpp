@@ -11,6 +11,7 @@
 #include <string>
 #include "machine.hpp"
 #include "opcode.hpp"
+#include "binary.hpp"
 
 // OPCODE CONSTANTS 
 #define LC3_ADD     0x01
@@ -62,6 +63,7 @@
 #define LC3_KBDR    0xFE02
 #define LC3_DSR     0xFE04
 #define LC3_DDR     0xFE06
+#define LC3_MCR     0xFFFE  // bit 15 of this register is clken
 
 // Memory 
 #define LC3_MEM_SIZE 65535
@@ -171,6 +173,7 @@ class LC3
         uint16_t* mem;
         uint32_t  mem_size;
         void      allocMem(void);
+        void      init_machine(void);
         // Processor
         LC3Proc     state;
         OpcodeTable op_table;
@@ -189,6 +192,7 @@ class LC3
         inline uint8_t  instr_get_of6(const uint16_t instr) const;
         inline uint16_t instr_get_pc9(const uint16_t instr) const;
         inline uint16_t instr_get_pc11(const uint16_t instr) const;
+        inline uint16_t instr_get_trap8(const uint16_t instr) const;
         // Set flags 
         inline void     set_flags(const uint8_t val);
         // Build opcode table 
@@ -207,13 +211,13 @@ class LC3
         void    fetch(void);
         void    decode(void);
         void    eval_addr(void);
-        //void    operand_fetch(void);
         void    execute(void);
         void    store(void);
 
     public:
-        LC3(const uint16_t mem_size);
+        LC3();
         ~LC3();
+        LC3(const LC3& that);
 
         // Reset CPU state 
         void     resetCPU(void);
@@ -223,6 +227,7 @@ class LC3
         void     writeMem(const uint16_t adr, const uint16_t val);
         uint16_t readMem(const uint16_t adr) const;
         int      loadMemFile(const std::string& filename, int offset);
+        void     loadMemProgram(const Program& p);
         std::vector<uint16_t> dumpMem(void) const;
 
         // Getters 

@@ -23,6 +23,11 @@ LC3Proc::LC3Proc()
     this->mdr   = 0;
     this->ir    = 0;
     this->flags = 0;
+    this->sr1   = 0;
+    this->sr2   = 0;
+    this->imm   = 0;
+    this->dst   = 0;
+    this->cur_opcode = 0;
 }
 
 LC3Proc::~LC3Proc() {} 
@@ -143,17 +148,47 @@ std::string LC3Proc::toString(void) const
  * LC3 
  * Constructor for and LC3 object
  */
-LC3::LC3(const uint16_t mem_size) 
+LC3::LC3()
 {
-    this->mem_size = mem_size;
+    this->mem_size = 65536;
     this->allocMem();
     this->resetMem();
     this->build_op_table();
+    this->init_machine();
 }
-
+// Dtor
 LC3::~LC3()
 {
     delete[] this->mem;
+}
+// Copy Ctor 
+LC3::LC3(const LC3& that)
+{
+    this->mem_size = that.mem_size;
+    this->allocMem();
+    this->state = that.state;
+    this->op_table = that.op_table;
+    this->psuedo_op_table = that.psuedo_op_table;
+}
+
+void LC3::init_machine(void)
+{
+    // set clock enable 
+    this->mem[LC3_MCR] = 0x8000;
+    // Init the processor state 
+    this->state.pc = 0;
+    this->state.flags = 0;
+    this->state.mar = 0;
+    this->state.mdr = 0;
+    this->state.ir = 0;
+    this->state.sr1 = 0;
+    this->state.sr2 = 0;
+    this->state.imm = 0;
+    this->state.dst = 0;
+    this->state.cur_opcode = 0;
+
+    for(int i = 0; i < 8; i++)
+       this->state.gpr[i] = 0;
 }
 
 void LC3::allocMem(void)
@@ -163,10 +198,7 @@ void LC3::allocMem(void)
 
 void LC3::resetCPU(void)
 {
-    this->state.pc    = 0;
-    this->state.flags = 0;
-    for(int i = 0; i < 8; i++)
-        this->state.gpr[i] = 0;
+    this->init_machine();
 }
 
 // ========  Instruction decode 
@@ -213,6 +245,10 @@ inline uint16_t LC3::instr_get_pc9(const uint16_t instr) const
 inline uint16_t LC3::instr_get_pc11(const uint16_t instr) const
 {
     return (instr & 0x03FF);
+}
+inline uint16_t LC3::instr_get_trap8(const uint16_t instr) const
+{
+    return (instr & 0x00FF);
 }
 inline void LC3::set_flags(const uint8_t val)
 {
@@ -311,6 +347,15 @@ int LC3::loadMemFile(const std::string& filename, int offset)
     return status;
 }
 
+void LC3::loadMemProgram(const Program& p)
+{
+    this->resetMem();
+    std::vector<Instr> instr_vec = p.getInstr();
+
+    for(unsigned int i = 0; i < instr_vec.size(); i++)
+        this->mem[instr_vec[i].adr] = instr_vec[i].ins;
+}
+
 std::vector<uint16_t> LC3::dumpMem(void) const
 {
     std::vector<uint16_t> mem_dump(this->mem_size);
@@ -321,6 +366,10 @@ std::vector<uint16_t> LC3::dumpMem(void) const
     return mem_dump;
 }
 
+/* 
+ * fetch()
+ * Implements the FETCH Phase of the instruction cycle
+ */
 void LC3::fetch(void)
 {
     if(this->verbose)
@@ -332,6 +381,10 @@ void LC3::fetch(void)
     this->state.ir  = this->state.mdr;
 }
 
+/* 
+ * decode()
+ * Implements the DECODE Phase of ths instruction cycle
+ */
 void LC3::decode(void)
 {
     this->state.cur_opcode = this->instr_get_opcode(this->state.ir);
@@ -346,7 +399,6 @@ void LC3::decode(void)
                 this->state.imm = this->sext5(this->instr_get_imm5(this->state.ir));
             else
                 this->state.sr2 = this->instr_get_sr2(this->state.ir);
-
             break;
 
         case LC3_AND:
@@ -387,25 +439,34 @@ void LC3::decode(void)
             break;
 
         case LC3_ST:
-            this->state.mar = this->state.imm + this->state.pc;
-            break;
-
         case LC3_STI:
-            this->state.mar = this->state.imm + this->state.pc;
+            this->state.sr1 = this->instr_get_dest(this->state.ir);
+            this->state.imm = this->sext9(this->instr_get_pc9(this->state.ir));
             break;
 
         case LC3_STR:
-            this->state.mar = this->state.imm + this->state.gpr[this->state.sr1];
+            this->state.sr1 = this->instr_get_dest(this->state.ir);
+            this->state.sr2 = this->instr_get_sr1(this->state.ir);
+            this->state.imm = this->sext6(this->instr_get_of6(this->state.ir));
+            break;
+
+        case LC3_TRAP:
+            this->state.imm = this->instr_get_trap8(this->state.ir);
+
             break;
 
         default:
             std::cout << "[" << __FUNCTION__ << "] invalid opcode <0x"
                 << std::hex << std::setw(4) << std::setfill('0') 
-                << this->state.cur_opcode << std::endl;
+                << this->state.cur_opcode << ">" << std::endl;
             break;
     }
 }
 
+/* 
+ * eval_addr()
+ * Implements the EVAL_ADDR phase of the instruction cycle
+ */
 void LC3::eval_addr(void)
 {
     switch(this->state.cur_opcode)
@@ -444,16 +505,23 @@ void LC3::eval_addr(void)
             this->state.mar = this->state.imm + this->state.gpr[this->state.sr1];
             break;
 
+        case LC3_TRAP:
+            this->state.mar = this->state.imm >> 1;
+            break;
+
         default:
             std::cout << "[" << __FUNCTION__ << "] invalid opcode <0x"
                 << std::hex << std::setw(4) << std::setfill('0')
-                << this->state.cur_opcode << std::endl;
+                << this->state.cur_opcode << ">" << std::endl;
             break;
     }
     
 }
 
-// Execute 
+/*
+ * execute()
+ * Implements the EXECUTE phase of the instruction cycle
+ */
 void LC3::execute(void)
 {
     // Execute the instruction
@@ -476,7 +544,6 @@ void LC3::execute(void)
         case LC3_LEA:
             break;
 
-
         // Instructions that have no EXECUTE phase 
         case LC3_LD:
         case LC3_LDI:
@@ -490,16 +557,30 @@ void LC3::execute(void)
         case LC3_ST:
             break;
 
+        case LC3_TRAP:
+            this->state.mdr = this->mem[this->state.mar];
+            this->state.gpr[7] = this->state.pc;
+            this->state.pc = this->state.mdr;
+            // TODO : just clear clken here for now,
+            // later when the OS routines are implemented we can 
+            // update this to work correctly
+            this->mem[LC3_MCR] = 0x0000;
+            break;
+
         default:
-            std::cerr << "Invalid opcode [" << std::hex << 
+            std::cout << "[" << __FUNCTION__ << "] Invalid opcode <" << std::hex << 
                 std::setw(4) << std::setfill('0') << 
-                this->state.cur_opcode << std::endl;
+                this->state.cur_opcode << ">" << std::endl;
             break;
     }
     // Set flags 
     this->set_flags(this->state.gpr[this->state.dst]);
 }
 
+/*
+ * store()
+ * Implements the STORE phase of the instruction cycle
+ */
 void LC3::store(void)
 {
     switch(this->state.cur_opcode)
@@ -546,29 +627,46 @@ void LC3::store(void)
             this->mem[this->state.mar] = this->state.gpr[this->state.sr1];
             break;
 
+        case LC3_TRAP:
+            break;
 
         default:
-            std::cerr << "Invalid opcode [" << std::hex << 
+            std::cerr << "Invalid opcode <" << std::hex << 
                 std::setw(4) << std::setfill('0') << 
-                this->state.cur_opcode << std::endl;
+                this->state.cur_opcode << ">" << std::endl;
     }
 }
 
 // Run an instruction cycle 
 int LC3::runCycle(void)
 {
-    int status = 0;     // TODO: how to set incorrect status?
+    int status = 1;     // TODO: how to set incorrect status?
 
-    while(1)
-    {
-        this->fetch();
-        this->decode();
-        this->eval_addr();
-        //this->operand_fetch();
-        this->execute();
-        this->store();
-        // TODO: check execution errors?
-    }
+
+    // Instruction cycle
+    this->fetch();
+    this->decode();
+    this->eval_addr();
+    this->execute();
+    this->store();
+    // Check clock enable
+    if(!(this->mem[LC3_MCR] & 0x8000))
+        status = 0;
+
+    //while(1)
+    //{
+    //    this->fetch();
+    //    this->decode();
+    //    this->eval_addr();
+    //    this->execute();
+    //    this->store();
+    //    // Check clock enable
+    //    if(!(this->mem[LC3_MCR] & 0x8000))
+    //    {
+    //        status = 0;
+    //        return status;
+    //    }
+    //}
 
     return status;
 }
@@ -601,12 +699,10 @@ bool LC3::getNeg(void) const
     return (this->state.flags & LC3_FLAG_N) ? true : false;
 }
 
-//std::vector<Opcode> LC3::getOpcodes(void) const
-//{
-//    std::vector<Opcode> o(this->opcode_list);
-//    return o;
-//}
-
+/*
+ * getOpTable()
+ * Dump a copy of the opcode table for this machine
+ */
 OpcodeTable LC3::getOpTable(void) const
 {
     return this->op_table;
