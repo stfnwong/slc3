@@ -81,8 +81,22 @@ TEST_F(TestAssembler, test_init)
 
 TEST_F(TestAssembler, test_asm_add)
 {
+    std::string asm_src_filename = "data/add_test.asm";
+    Lexer lexer(this->op_table, asm_src_filename);
+    lexer.setVerbose(false);
+    this->source_info = lexer.lex();
+    Assembler as(this->source_info);
+    as.setVerbose(true);
+
+    ASSERT_EQ(0, as.getNumErr());
+    as.assemble();
+}
+
+TEST_F(TestAssembler, test_asm_pow)
+{
     // TODO: narrow the scope of this unit test
-    Lexer lexer(this->op_table, this->src_filename);
+    std::string asm_src_filename = "data/pow10.asm";
+    Lexer lexer(this->op_table, asm_src_filename);
     lexer.setVerbose(false);
     this->source_info = lexer.lex();
     Assembler as(this->source_info);

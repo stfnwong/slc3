@@ -58,10 +58,21 @@ typedef struct{
     bool         error;
 } LineInfo;
 
+/*
+ * initLineInfo()
+ * Reset a lineinfo struct
+ */
 void initLineInfo(LineInfo& l);
-void printLineInfo(const LineInfo& l);
-void printHorzLineInfo(const LineInfo& l);
+/*
+ * compLineInfo()
+ * Compare two LineInfo structs
+ */
+bool compLineInfo(const LineInfo& a, const LineInfo& b);
 
+/* 
+ * SourceInfo
+ * Object to hold information about assembly source
+ */
 class SourceInfo
 {
     private:

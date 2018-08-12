@@ -263,7 +263,7 @@ void Assembler::asm_str(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling STR" << std::endl;
+            << std::dec << line.line_num << ") assembling STR" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
@@ -282,7 +282,7 @@ void Assembler::asm_sti(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling STI" << std::endl;
+            << std::dec << line.line_num << ") assembling STI" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
@@ -301,7 +301,7 @@ void Assembler::asm_trap(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling TRAP" << std::endl;
+            << std::dec << line.line_num << ") assembling TRAP" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_in8(instr.ins));
@@ -316,7 +316,7 @@ void Assembler::dir_blkw(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
-            line.line_num << ") assembling .BLKW" << std::endl;
+            std::dec << line.line_num << ") assembling .BLKW" << std::endl;
     }
 
     unsigned int addr;
@@ -329,7 +329,7 @@ void Assembler::dir_fill(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
-            line.line_num << ") assembling .FILL" << std::endl;
+            std::dec << line.line_num << ") assembling .FILL" << std::endl;
     }
     // Next location in memory gets line.imm
     this->program.writeMem(line.addr, line.imm);
@@ -340,7 +340,7 @@ void Assembler::dir_orig(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
-            line.line_num << ") assembling .ORIG" << std::endl;
+            std::dec << line.line_num << ") assembling .ORIG" << std::endl;
     }
     this->start_addr = line.imm;
 }
@@ -350,7 +350,7 @@ void Assembler::dir_stringz(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
-            line.line_num << ") assembling .STRINGZ" << std::endl;
+            std::dec << line.line_num << ") assembling .STRINGZ" << std::endl;
         std::cout << "NOT YET IMPLEMENTED" << std::endl;
     }
 }
@@ -382,7 +382,7 @@ void Assembler::assemble(void)
             if(this->verbose)
             {
                 std::cout << "[" << __FUNCTION__ << "] (src line " << 
-                    cur_line.line_num << ") is directive " <<
+                    std::dec << cur_line.line_num << ") is directive " <<
                     cur_line.opcode.mnemonic << std::endl;
             }
             // TODO: some kind of indirection that allows for 
@@ -420,6 +420,9 @@ void Assembler::assemble(void)
             case LC3_LDR:
                 this->asm_ldr(cur_line);
                 break;
+            case LC3_NOT:
+                this->asm_not(cur_line);
+                break;
             case LC3_STR:
                 this->asm_str(cur_line);
                 break;
@@ -428,7 +431,7 @@ void Assembler::assemble(void)
                 break;
             default:
                 std::cout << "[" << __FUNCTION__ <<
-                    "] (line " << cur_line.line_num << 
+                    "] (line " << std::dec << cur_line.line_num << 
                     ") invalid opcode 0x" << std::hex << 
                     std::setw(2) << std::setfill('0') <<
                     cur_line.opcode.opcode << " with mnemonic " <<

@@ -91,7 +91,135 @@ TEST_F(TestLexer, test_init)
     l.dumpOpTable();
 }
 
-TEST_F(TestLexer, test_lex_source)
+// Helper function to generate the correct SourceInfo for 
+// the file "data/add_test.asm"
+SourceInfo get_add_test_source_info(void)
+{
+    SourceInfo info;
+    LineInfo line;
+
+    // Line 6 (.ORIG x3000)
+    initLineInfo(line);
+    line.line_num        = 6;
+    line.addr            = 0x3000;
+    line.opcode.mnemonic = ".ORIG";
+    line.opcode.opcode   = 0;
+    line.imm             = 0x3000;
+    line.is_directive    = true;
+    info.add(line);
+    // Line 7 (LD, R1, Val1)
+    initLineInfo(line);
+    line.line_num        = 7;
+    line.addr            = 0x3001;
+    line.opcode.mnemonic = "LD";
+    line.opcode.opcode   = 0x02;
+    line.arg1            = 0x01;
+    line.imm             = 0x3005;
+    line.symbol          = "Val1";
+    info.add(line);
+    // Line 8 (LD,R2,Val2)
+    initLineInfo(line);
+    line.line_num        = 8;
+    line.addr            = 0x3002;
+    line.opcode.mnemonic = "LD";
+    line.opcode.opcode   = 0x02;
+    line.arg1            = 0x02;
+    line.imm             = 0x3006;
+    line.symbol          = "Val2";
+    info.add(line);
+    // Line 9 (ADD R3,R1,R2)
+    initLineInfo(line);
+    line.line_num        = 9;
+    line.addr            = 0x3003;
+    line.opcode.mnemonic = "ADD";
+    line.opcode.opcode   = 0x01;
+    line.arg1            = 0x03;
+    line.arg2            = 0x01;
+    line.arg3            = 0x02;
+    info.add(line);
+    // Line 10 (HALT)
+    initLineInfo(line);
+    line.line_num        = 10;
+    line.addr            = 0x3004;
+    line.opcode.opcode   = 0x0F;
+    line.opcode.mnemonic = "TRAP";
+    line.imm             = 0x25;
+    info.add(line);
+    // Line 11 (Val1 .FILL #1)
+    initLineInfo(line);
+    line.line_num        = 11;
+    line.addr            = 0x3005;
+    line.opcode.opcode   = 0x0;
+    line.opcode.mnemonic = ".FILL";
+    line.label           = "Val1";
+    line.imm             = 1;
+    line.is_label        = true;
+    line.is_directive    = true;
+    info.add(line);
+    // Line 12 (Val2 .FILL #2)
+    initLineInfo(line);
+    line.line_num        = 12;
+    line.addr            = 0x3006;
+    line.opcode.opcode   = 0x0;
+    line.opcode.mnemonic = ".FILL";
+    line.label           = "Val2";
+    line.imm             = 2;
+    line.is_label        = true;
+    line.is_directive    = true;
+    info.add(line);
+    // Line 12 (.END)
+    initLineInfo(line);
+    line.line_num        = 13;
+    line.addr            = 0x3007;
+    line.opcode.opcode   = 0x0;
+    line.opcode.mnemonic = ".END";
+    line.is_directive    = true;
+    info.add(line);
+
+    return info;
+
+}
+
+TEST_F(TestLexer, test_lex_add)
+{
+    std::string asm_src_filename = "data/add_test.asm";
+    Lexer lexer(this->op_table, asm_src_filename);
+    lexer.setVerbose(true);
+    SourceInfo lsource = lexer.lex();
+
+    // Dump the source info
+    std::cout << "[" << __FUNCTION__ << "] Lexer created info for " << lsource.getNumLines() << " lines" << std::endl;
+    for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
+        lsource.printLine(idx);
+
+    // Dump the symbol table 
+    SymbolTable sym_table = lexer.dumpSymTable();
+    std::cout << "[" << __FUNCTION__ << "] Dumping symbol table" << std::endl;
+    for(unsigned int s = 0; s < sym_table.getNumSyms(); ++s)
+    {
+        Symbol sym = sym_table.get(s);
+        std::cout << std::left << std::setw(12) << std::setfill(' ') << 
+            sym.label << " : 0x" << std::hex << std::setfill('0') << sym.addr << std::endl;
+    }
+
+    SourceInfo expected_info = get_add_test_source_info();
+    std::cout << "[" << __FUNCTION__ << "] expected source info" << std::endl;
+    for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
+        expected_info.printLine(idx);
+
+    // TODO : Because I am not yet dealing with the .END directive we skip the last line
+    std::cout << "[" << __FUNCTION__ << "] checking source info" << std::endl;
+    for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)
+    {
+        LineInfo lex_line = lsource.get(idx);
+        LineInfo exp_line = expected_info.get(idx);
+        std::cout << "Checking line " << idx+1 << "(source line " << std::dec << lex_line.line_num << ") ...";
+        ASSERT_EQ(true, compLineInfo(lex_line, exp_line));
+        std::cout << " done" << std::endl;
+    }
+}
+
+TEST_F(TestLexer, test_lex_pow)
 {
     //ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
     SourceInfo lsource;
@@ -103,7 +231,7 @@ TEST_F(TestLexer, test_lex_source)
     lsource = l.lex();
 
     // Dump the source info to console
-    std::cout << "Lexer created info for " << lsource.getNumLines() << " lines" << std::endl;
+    std::cout << "[" << __FUNCTION__ << "] Lexer created info for " << lsource.getNumLines() << " lines" << std::endl;
     for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
         lsource.printLine(idx);
 
@@ -123,7 +251,7 @@ TEST_F(TestLexer, test_lex_source)
     // Also dump the symbol table 
     SymbolTable sym_table = l.dumpSymTable();
 
-    std::cout << "Dumping symbol table" << std::endl;
+    std::cout << "[" << __FUNCTION__ << "] Dumping symbol table" << std::endl;
     for(unsigned int s = 0; s < sym_table.getNumSyms(); ++s)
     {
         Symbol sym = sym_table.get(s);

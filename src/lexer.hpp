@@ -83,7 +83,7 @@ class Lexer
     private:
         // Symbol parse
         bool getNextArg(void);
-        void parseOpcodeArgs(void);
+        void parseOpcode3Args(void);
         void parseOpcode(const Opcode& o);
         void parseTrapOpcode(void);
         void parseDirective(void);
