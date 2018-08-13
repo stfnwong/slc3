@@ -76,6 +76,7 @@ class Lexer
         bool isNumber(void) const;
         bool isDirective(void) const;
         bool isSpace(void);
+        bool isComment(void);
         bool isMnemonic(void);
         bool isTrapOp(void);
         void skipLine(void);

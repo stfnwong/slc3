@@ -112,8 +112,13 @@ void Lexer::skipComment(void)
 void Lexer::readSymbol(void)
 {
     unsigned int idx = 0;
-    while(!this->isSpace() && idx < (this->token_buf_size-1))
+    //while((!this->isSpace() || !this->isComment())  && idx < (this->token_buf_size-1))
+    while(idx < (this->token_buf_size-1))
     {
+        if(this->isSpace())
+            break;
+        if(this->isComment())
+            break;
         this->token_buf[idx] = this->cur_char;
         this->advance();
         idx++;
@@ -145,6 +150,10 @@ bool Lexer::isSpace(void)
     return (this->cur_char == ' '  || 
             this->cur_char == '\t' ||
             this->cur_char == '\n') ? true : false;
+}
+bool Lexer::isComment(void)
+{
+    return (this->cur_char == ';');
 }
 
 // TODO: need to deal with case (removing case) here 
@@ -194,9 +203,13 @@ bool Lexer::getNextArg(void)
     {
         if(this->cur_char == '\n')
             break;
-        this->token_buf[idx] = this->cur_char;
+        // eat whitespace 
+        if(this->cur_char != ' ')
+        {
+            this->token_buf[idx] = this->cur_char;
+            idx++;
+        }
         this->advance();
-        idx++;
     }
 
     this->advance();    // advance over the newline
