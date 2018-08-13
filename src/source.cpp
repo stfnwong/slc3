@@ -89,36 +89,44 @@ void initLineInfo(LineInfo& l)
     l.is_directive = false;
 }
 
-void printLineInfo(const LineInfo& l)
+/*
+ * compLineInfo()
+ * Compare two LineInfo objects
+ */
+bool compLineInfo(const LineInfo& a, const LineInfo& b)
 {
-    std::ostringstream oss;
-       
-    oss << "==========================================" << std::endl;
-    oss << "line      : " << std::dec << l.line_num << std::endl;
-    oss << "addr      : 0x" << std::hex << l.addr     << std::endl;
-    oss << "symbol    : " << l.symbol   << std::endl;
-    oss << "label     : " << l.label    << std::endl;
-    oss << "opcode    : " << std::hex << std::setw(4) << std::setfill('0') << l.opcode.opcode << std::endl;
-    //oss << "flags     : " << std::hex << std::setw(2) << l.flags << std::endl;
-    oss << "flags     : ";
-    if(l.flags & LC3_FLAG_P)
-        oss << "p";
-    if(l.flags & LC3_FLAG_N)
-        oss << "n";
-    if(l.flags & LC3_FLAG_Z)
-        oss << "z";
-    oss << std::endl;
-    oss << "mnemonic  : " << l.opcode.mnemonic << std::endl;
-    oss << "arg1      : " << std::hex << std::setw(4) << std::setfill('0') << l.arg1 << std::endl;
-    oss << "arg2      : " << std::hex << std::setw(4) << std::setfill('0') << l.arg2 << std::endl;
-    oss << "arg3      : " << std::hex << std::setw(4) << std::setfill('0') << l.arg3 << std::endl;
-    oss << "imm val   : " << std::hex << std::setw(4) << std::setfill('0') << l.imm  << std::endl;
-    oss << "imm       : " << l.is_imm << std::endl;
-    oss << "label     : " << l.is_label << std::endl;
-    oss << "directive : " << l.is_directive << std::endl;
-    oss << "error     : " << l.error << std::endl;
+    if(a.symbol != b.symbol)
+        return false;
+    if(a.label != b.label)
+        return false;
+    if(a.opcode.opcode != b.opcode.opcode)
+        return false;
+    if(a.opcode.mnemonic != b.opcode.mnemonic)
+        return false;
+    if(a.line_num != b.line_num)
+        return false;
+    if(a.addr != b.addr)
+        return false;
+    if(a.flags != b.flags)
+        return false;
+    if(a.arg1 != b.arg1)
+        return false;
+    if(a.arg2 != b.arg2)
+        return false;
+    if(a.arg3 != b.arg3)
+        return false;
+    if(a.imm != b.imm)
+        return false;
+    if(a.is_imm != b.is_imm)
+        return false;
+    if(a.is_label != b.is_label)
+        return false;
+    if(a.is_directive != b.is_directive)
+        return false;
+    if(a.error != b.error)
+        return false;
 
-    std::cout << oss.str();
+    return true;
 }
 
 /*
@@ -180,7 +188,7 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
     // (Next line) Text 
     oss << std::endl;
     oss << "Label [" << std::setw(16) << std::setfill(' ') << l.label << "] ";
-    oss << "Symbol[" << std::setfill(' ') << l.symbol << "] ";
+    oss << "Symbol[" << std::setw(16) << std::setfill(' ') << l.symbol << "] ";
 
     oss << std::endl;
     

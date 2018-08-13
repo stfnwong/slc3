@@ -76,6 +76,7 @@ class Lexer
         bool isNumber(void) const;
         bool isDirective(void) const;
         bool isSpace(void);
+        bool isComment(void);
         bool isMnemonic(void);
         bool isTrapOp(void);
         void skipLine(void);
@@ -83,7 +84,7 @@ class Lexer
     private:
         // Symbol parse
         bool getNextArg(void);
-        void parseOpcodeArgs(void);
+        void parseOpcode3Args(void);
         void parseOpcode(const Opcode& o);
         void parseTrapOpcode(void);
         void parseDirective(void);
