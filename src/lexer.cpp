@@ -109,15 +109,16 @@ void Lexer::skipComment(void)
         this->advance();
 }
 
-void Lexer::readSymbol(void)
+void Lexer::scanToken(void)
 {
     unsigned int idx = 0;
-    //while((!this->isSpace() || !this->isComment())  && idx < (this->token_buf_size-1))
     while(idx < (this->token_buf_size-1))
     {
         if(this->isSpace())
             break;
         if(this->isComment())
+            break;
+        if(this->cur_char == ',')
             break;
         this->token_buf[idx] = this->cur_char;
         this->advance();
@@ -277,6 +278,7 @@ ARG_ERR:
                 " opcode" << std::endl;
         }
         this->line_info.error = true;
+        this->line_info.errstr = "Argument " + std::to_string(err_argnum) + " of opcode " + this->line_info.opcode.mnemonic + " invalid";
         this->skipLine();
     }
 }
@@ -285,11 +287,26 @@ ARG_ERR:
  * parseOpcode
  * Parse an opcode in the LC3 assembly language 
  */
-void Lexer::parseOpcode(const Opcode& o)
+void Lexer::parseOpcode(void)
 {
     // TODO : How to generically parse Opcodes?  Maybe I need virtual 
     // methods here. This won't be such a problem until I decide to 
     // 'genericize' the assembler
+    // We got a known opcode
+    Opcode o;
+    this->op_table.get(std::string(this->token_buf), o);
+    this->line_info.opcode = o;
+    if(o.mnemonic == "M_INVALID")
+    {
+        this->line_info.error = true;
+        this->line_info.errstr = "Invalid opcode <" + std::string(this->token_buf) + ">";
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] " << this->line_info.errstr << std::endl;
+        }
+        return;
+    }
+
     if(this->verbose)
         std::cout << "[" << __FUNCTION__ << "] decoding <" 
             << o.mnemonic << ">" << std::endl;
@@ -350,6 +367,7 @@ void Lexer::parseOpcode(const Opcode& o)
                 if(!this->getNextArg())
                 {
                     this->line_info.error = true;
+                    this->line_info.errstr = "Failed to parse JMP argument <" + std::string(this->token_buf) + ">";
                     break;
                 }
                 arg = std::string(this->token_buf);
@@ -363,20 +381,20 @@ void Lexer::parseOpcode(const Opcode& o)
             else
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Invalid jump opcode " + o.mnemonic;
                 if(this->verbose)
                 {
                     std::cout << "[" << __FUNCTION__ << 
-                        "] invalid jump opcode " << o.mnemonic 
-                        << std::endl;
+                        "] " << this->line_info.errstr << std::endl;
                 }
             }
-
             break;
 
         case LC3_JSR:
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse JSR immediate <" + std::string(this->token_buf) + ">";
                 break;
             }
             arg = std::string(this->token_buf);
@@ -393,11 +411,11 @@ void Lexer::parseOpcode(const Opcode& o)
             else
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Invalid jump opcode " + o.mnemonic; 
                 if(this->verbose)
                 {
                     std::cout << "[" << __FUNCTION__ << 
-                        "] invalid jump opcode " << o.mnemonic 
-                        << std::endl;
+                        "] " << this->line_info.errstr << std::endl;
                 }
             }
             break;
@@ -406,6 +424,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse LEA argument <" + std::string(this->token_buf) + ">";
                 break;
             }
             arg = std::string(this->token_buf);
@@ -413,12 +432,12 @@ void Lexer::parseOpcode(const Opcode& o)
             // Next could be a symbol
             if(this->isNumber())
             {
-                this->readSymbol();
+                this->scanToken();
                 this->line_info.imm = std::stoi(std::string(this->token_buf));
             }
             else
             {
-                this->readSymbol();
+                this->scanToken();
                 this->line_info.symbol = std::string(this->token_buf);
             }
 
@@ -430,6 +449,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse LD argument <" + std::string(this->token_buf) + ">"; 
                 break;
             }
             arg = std::string(this->token_buf);
@@ -437,12 +457,12 @@ void Lexer::parseOpcode(const Opcode& o)
             // Next could be a symbol
             if(this->isNumber())
             {
-                this->readSymbol();
+                this->scanToken();
                 this->line_info.imm = std::stoi(std::string(this->token_buf));
             }
             else
             {
-                this->readSymbol();
+                this->scanToken();
                 this->line_info.symbol = std::string(this->token_buf);
             }
             break;
@@ -452,6 +472,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse LDR argument <" + std::string(this->token_buf) + "> (destination register)";
                 break;
             }
             arg = std::string(this->token_buf);
@@ -460,6 +481,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse LDR argument <" + std::string(this->token_buf) + "> (base register)";
                 break;
             }
             arg = std::string(this->token_buf);
@@ -469,6 +491,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse LDR argument <" + std::string(this->token_buf) + "> (offset6)"; 
                 break;
             }
             arg = std::string(this->token_buf);
@@ -478,10 +501,11 @@ void Lexer::parseOpcode(const Opcode& o)
             break;
 
         case LC3_NOT:
-            // Get src 
+            // Get dest 
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse NOT argument <" + std::string(this->token_buf) + "> (destination register)"; 
                 break;
             }
             arg = std::string(this->token_buf);
@@ -490,6 +514,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse NOT argument <" + std::string(this->token_buf) + "> (source register)"; 
                 break;
             }
             arg = std::string(this->token_buf);
@@ -503,6 +528,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse ST argument <" + std::string(this->token_buf) + "> (source register)"; 
                 break;
             }
             arg = std::string(this->token_buf);
@@ -511,6 +537,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse ST argument <" + std::string(this->token_buf) + "> (base register)"; 
                 break;
             }
             arg = std::string(this->token_buf);
@@ -520,6 +547,7 @@ void Lexer::parseOpcode(const Opcode& o)
             if(!this->getNextArg())
             {
                 this->line_info.error = true;
+                this->line_info.errstr = "Failed to parse ST argument <" + std::string(this->token_buf) + "> (offset6)"; 
                 break;
             }
             arg = std::string(this->token_buf);
@@ -551,12 +579,13 @@ void Lexer::parseTrapOpcode(void)
     this->psuedo_op_table.get(std::string(this->token_buf), o);
     if(o.mnemonic == "M_INVALID")
     {
+        this->line_info.error = true;
+        this->line_info.errstr = "Not a valid TRAP psuedo-op <" + std::string(this->token_buf) + ">";
         if(this->verbose)
         {
-            std::cout << "[" << __FUNCTION__ << "] opcode " <<
-                std::string(this->token_buf) << " not a valid trap opcode" << std::endl;
+            std::cout << "[" << __FUNCTION__ << "] " <<
+                this->line_info.errstr << std::endl;
         }
-        this->line_info.error = true;
         return;
     }
 
@@ -598,11 +627,12 @@ void Lexer::parseTrapOpcode(void)
 
         default:
             this->line_info.error = true;
+            this->line_info.errstr = "No implementation for opcode <" 
+                + tok;
             if(this->verbose)
             {
-                std::cout << "[" << __FUNCTION__ << 
-                    "] no implementation for trap opcode " <<
-                    o.mnemonic << std::endl;
+                std::cout << "[" << __FUNCTION__ << "] " <<
+                    this->line_info.errstr << std::endl;
             }
             break;
     }
@@ -616,8 +646,6 @@ void Lexer::parseDirective(void)
 {
     Opcode o;
     this->line_info.is_directive    = true;
-    this->readSymbol();
-
     // TODO: these symbols are also LC3 assembly specific, 
     // in the generic version they will need to be moved out 
     // to some other class / struct
@@ -627,12 +655,14 @@ void Lexer::parseDirective(void)
     this->asm_dir_table.get(std::string(this->token_buf), o);
     if(o.mnemonic == "M_INVALID" || o.mnemonic == ".INVALID")
     {
+
+        this->line_info.error = true;
+        this->line_info.errstr = "Opcode <" + std::string(this->token_buf) + "> not a valid assembler directive";
         if(this->verbose)
         {
-            std::cout << "[" << __FUNCTION__ << "] opcode " <<
-                std::string(this->token_buf) << " not a valid assembler directive opcode" << std::endl;
+            std::cout << "[" << __FUNCTION__ << "] " << 
+                this->line_info.errstr << std::endl;
         }
-        this->line_info.error = true;
         return;
     }
     this->line_info.opcode = o;
@@ -679,21 +709,29 @@ void Lexer::parseDirective(void)
             break;
         default:
             this->line_info.error = true;
+            this->line_info.errstr = "Token <" + o.mnemonic + "> is not a valid assembler directive";
+            if(this->verbose)
+            {
+                std::cout << "[" << __FUNCTION__ << "] " << 
+                    this->line_info.errstr << std::endl;
+            }
             break;
     }
 }
 
 /*
- * parseLine()
- * Parse a single line of the assembly source
+ * parseToken()
+ * Deduce the meaning of a single token, calling on more
+ * specialized functions to parse as meaning is interpreted
  */
-void Lexer::parseLine(void)
+void Lexer::parseToken(void)
 {
-    Opcode o;
-
-    initLineInfo(this->line_info);   
-    this->line_info.line_num = this->cur_line;
-
+    this->scanToken();
+    if(this->verbose)
+    {
+        std::cout << "[" << __FUNCTION__ << "] scanned " << 
+            std::string(this->token_buf) << " into token buffer\n";
+    }
     // Could be an unlabelled directive 
     if(this->isDirective())
     {
@@ -704,94 +742,108 @@ void Lexer::parseLine(void)
                 std::string(this->token_buf) << ">" << std::endl;
         }
         this->parseDirective();
-        goto LINE_END;
+        return;
     }
 
-    // Not a directive, load symbol into token_buf and
-    // check against known opcodes
-    this->readSymbol();
-    if(!this->isMnemonic())
+    // Could be a trap operation
+    if(this->isTrapOp())
     {
-        // Check for psuedo ops associated with TRAP vectors 
-        if(this->isTrapOp())
-        {
-            this->parseTrapOpcode();
-            goto LINE_END;
-        }
-        // Not a trap opcode, set label 
-        this->line_info.is_label = true;
-
-        // Since its neither an opcode or a psuedo op, we assume
-        // its a label and store into symbol table
         if(this->verbose)
         {
-            std::cout << "[" << __FUNCTION__ << "] (line "
-                << std::dec << this->cur_line << ") found label symbol <" 
-                << std::string(this->token_buf) << "> at address 0x"
-                << std::hex << std::setw(4) << std::setfill('0') 
-                << this->cur_addr << std::endl;
+            std::cout << "[" << __FUNCTION__ << "] (line " << 
+                std::dec << this->cur_line << ") found trap opcode <" << 
+                std::string(this->token_buf) << ">" << std::endl;
         }
-        
-        // add the label, removing any trailing characters (eg ':')
-        std::string label(this->token_buf);
-        if(label[label.length()-1] == ':')
-            this->line_info.label = label.substr(0, label.length()-1);
-        else
-            this->line_info.label = std::string(this->token_buf);
-        Symbol s;
-        // Get rid of any trailing non-alphanum chars 
-        std::string sym_label = std::string(this->token_buf);
-        while(!isalnum(toupper(sym_label[sym_label.length()-1])))
-            sym_label.pop_back();
-        s.label = sym_label;
-        s.addr  = this->cur_addr;
-        std::cout << "s.label [" << s.label <<  "] s.addr : " << std::hex << s.addr << std::endl;
-        this->sym_table.add(s);
-        this->skipWhitespace();
-
-        // We may have a labelled directive
-        if(this->isDirective())
-        {
-            if(this->verbose)
-            {
-                std::cout << "[" << __FUNCTION__ << "] (line " <<
-                    std::dec << this->cur_line << ") found labelled directive <" << 
-                    std::string(this->token_buf) << ">" << std::endl;
-            }
-            this->parseDirective();
-            goto LINE_END;
-        }
-        // We may also have a labelled TRAP opcode
-        if(this->isTrapOp())
-        {
-            this->parseTrapOpcode();
-            goto LINE_END;
-        }
-        this->readSymbol();
+        this->parseTrapOpcode();
+        return;
     }
 
+    // Could be a valid mnemonic
+    if(this->isMnemonic())
+    {
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] (line " << 
+                std::dec << this->cur_line << ") found opcode <" << 
+                std::string(this->token_buf) << ">" << std::endl;
+        }
+        this->parseOpcode();
+        return;
+    }
+
+    // If we get here and the label status is set, then we 
+    // previously found a label but cannot find a corresponding
+    // instruction
+    if(this->line_info.is_label)
+    {
+        this->line_info.error = true;
+        this->line_info.errstr = "No valid instruction";
+        std::cerr << "[" << __FUNCTION__ << "] (line " << 
+            std::dec << this->line_info.line_num << ") " << 
+            this->line_info.errstr << std::endl;
+        return;
+    }
+
+    // Since its neither an opcode or a psuedo op, we assume
+    // its a label and store into symbol table
+    this->line_info.is_label = true;
     if(this->verbose)
     {
-        std::cout << "[" << __FUNCTION__ << "] (line " << std::dec 
-            << this->cur_line <<  ") found opcode symbol " << std::string(this->token_buf) 
-            << std::endl;
+        std::cout << "[" << __FUNCTION__ << "] (line "
+            << std::dec << this->cur_line << ") found label symbol <" 
+            << std::string(this->token_buf) << "> at address 0x"
+            << std::hex << std::setw(4) << std::setfill('0') 
+            << this->cur_addr << std::endl;
     }
+        
+    // add the label, removing any trailing characters (eg ':')
+    std::string label(this->token_buf);
+    if(label[label.length()-1] == ':')
+        this->line_info.label = label.substr(0, label.length()-1);
+    else
+        this->line_info.label = std::string(this->token_buf);
+    Symbol s;
+    // Get rid of any trailing non-alphanum chars 
+    std::string sym_label = std::string(this->token_buf);
+    while(!isalnum(toupper(sym_label[sym_label.length()-1])))
+        sym_label.pop_back();
+    s.label = sym_label;
+    s.addr  = this->cur_addr;
+    std::cout << "s.label [" << s.label <<  "] s.addr : " << std::hex << s.addr << std::endl;
+    this->sym_table.add(s);
+    this->skipWhitespace();
+}
 
-    // We got a known opcode
-    this->op_table.get(std::string(this->token_buf), o);
-    this->line_info.opcode = o;
-    if(o.mnemonic == "M_INVALID")
+/*
+ * parseLine()
+ * Parse a single line of the assembly source
+ */
+void Lexer::parseLine(void)
+{
+    initLineInfo(this->line_info);   
+    this->line_info.line_num = this->cur_line;
+
+    this->parseToken();
+    // Check the line info to see what kind of line it was. 
+    if(this->line_info.error)
     {
-        if(this->verbose)
-        {
-            std::cout << "[" << __FUNCTION__ << "] opcode " <<
-                std::string(this->token_buf) << " not a valid opcode" << std::endl;
-        }
-        this->line_info.error = true;
+        std::cerr << "[" << __FUNCTION__ << "] error line ("
+            << std::dec << this->line_info.line_num << ") "
+            << this->line_info.errstr << std::endl;
         goto LINE_END;
     }
-    this->skipWhitespace();
-    this->parseOpcode(o);
+
+    // If it was a label, we need to call parseToken() again 
+    if(this->line_info.is_label)
+    {
+        if(this->verbose)
+        { 
+            std::cout << "[" << __FUNCTION__ << "] got label on line "
+                << std::dec << this->line_info.line_num << std::endl;
+        }
+        //this->skipWhitespace();
+        this->parseToken();
+    }
 
 LINE_END:
     this->line_info.addr = this->cur_addr;
@@ -851,18 +903,19 @@ SourceInfo Lexer::lex(void)
         // Skip comments
         if(this->cur_char ==  ';')
         {
-            if(this->verbose)
-                std::cout << "Found a comment on line " << std::dec << this->cur_line << std::endl;
             this->skipLine();
             continue;
         }
 
-        // Check for symbols or directives
-        if(this->isSymbol() ||  this->isDirective())
+        this->parseLine();
+        this->source_info.add(this->line_info);
+        if(this->line_info.error)
         {
-            this->parseLine();
-            this->source_info.add(this->line_info);
-            continue;
+            std::cout << "[" << __FUNCTION__ << "] (line " << 
+                this->line_info.line_num << ") ERROR " << 
+                this->line_info.errstr << std::endl;
+            this->source_info.setError(true);
+            return this->source_info;
         }
     }
     // Second pass 

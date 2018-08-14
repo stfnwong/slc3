@@ -28,12 +28,25 @@ OpcodeTable test_build_op_table(void)
         {LC3_LDR, "LDR"},
         {LC3_LEA, "LEA"},
         {LC3_ST,  "ST"},
+        {LC3_STI, "STI"},
         {LC3_STR, "STR"},
         {LC3_NOT, "NOT"},
+        {LC3_RTI, "RTI"},
+        // Jump instr 
+        {LC3_JMP_RET, "JMP"},
+        {LC3_JMP_RET, "RET"},
+        {LC3_JSR, "JSR"},
+        {LC3_JSR, "JSRR"},
         // BR and variants 
         {LC3_BR,  "BR"},
-        {LC3_BRP,  "BRp"},
-        {LC3_BRN,  "BRn"},
+        {LC3_BRP, "BRp"},
+        {LC3_BRN, "BRn"},
+        {LC3_BRZ, "BRz"},
+        {LC3_BRZP, "BRzp"},
+        {LC3_BRNZ, "BRnz"},
+        {LC3_BRNZP, "BRnzp"},
+        // Trap vector 
+        {LC3_TRAP, "TRAP"}
     };
     // iterate over this in the C++ way
     for(const Opcode &op : opcode_list)
@@ -273,6 +286,7 @@ SourceInfo get_sentinel_test_source_info(void)
     line.line_num        = 14;
     line.addr            = 0x3008;
     line.opcode.mnemonic = "BR";
+    line.flags           = 0x7;     // all flags
     line.opcode.opcode   = 0x0;
     line.symbol          = "TestEnd";
     line.imm             = 0x3004;
@@ -324,6 +338,7 @@ TEST_F(TestLexer, test_lex_add)
     }
 
     SourceInfo expected_info = get_add_test_source_info();
+    ASSERT_EQ(false, expected_info.hasError());
     std::cout << "[" << __FUNCTION__ << "] expected source info" << std::endl;
     for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
         expected_info.printLine(idx);
@@ -363,6 +378,7 @@ TEST_F(TestLexer, test_lex_sentinel)
     }
 
     SourceInfo expected_info = get_sentinel_test_source_info();
+    ASSERT_EQ(false, expected_info.hasError());
     std::cout << "[" << __FUNCTION__ << "] expected source info" << std::endl;
     for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
         expected_info.printLine(idx);

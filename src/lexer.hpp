@@ -71,7 +71,7 @@ class Lexer
         bool exhausted(void) const;
         void skipWhitespace(void);
         void skipComment(void);
-        void readSymbol(void);
+        void scanToken(void);
         bool isSymbol(void) const;
         bool isNumber(void) const;
         bool isDirective(void) const;
@@ -85,9 +85,11 @@ class Lexer
         // Symbol parse
         bool getNextArg(void);
         void parseOpcode3Args(void);
-        void parseOpcode(const Opcode& o);
+        //void parseOpcode(const Opcode& o);
+        void parseOpcode(void);
         void parseTrapOpcode(void);
         void parseDirective(void);
+        void parseToken(void);
         void parseLine(void);
 
     // Source internals 

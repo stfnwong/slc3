@@ -77,6 +77,7 @@ void initLineInfo(LineInfo& l)
     l.addr     = 0;
     l.symbol   = "\0";
     l.label    = "\0";
+    l.errstr   = "\0";
     l.opcode   = {0x0, "DEFAULT"},
     l.arg1     = 0;
     l.arg2     = 0;
@@ -91,7 +92,7 @@ void initLineInfo(LineInfo& l)
 
 /*
  * compLineInfo()
- * Compare two LineInfo objects
+ * Compare two LineInfo objects. errstr isn't checked here 
  */
 bool compLineInfo(const LineInfo& a, const LineInfo& b)
 {
@@ -132,7 +133,10 @@ bool compLineInfo(const LineInfo& a, const LineInfo& b)
 /*
  * SOURCEINFO 
  */
-SourceInfo::SourceInfo() {} 
+SourceInfo::SourceInfo()
+{
+    this->error = false;
+}
 
 SourceInfo::~SourceInfo() {} 
 
@@ -273,7 +277,7 @@ unsigned int SourceInfo::numInstance(const std::string& m) const
 {
     unsigned int n = 0;
     unsigned int idx;
-
+    // Could replace linear search here later...
     for(idx = 0; idx < this->line_info.size(); idx++)
     {
         if(this->line_info[idx].opcode.mnemonic == m)
@@ -281,6 +285,16 @@ unsigned int SourceInfo::numInstance(const std::string& m) const
     }
 
     return n;
+}
+
+bool SourceInfo::hasError(void) const
+{
+    return this->error;
+}
+
+void SourceInfo::setError(const bool e) 
+{
+    this->error = e;
 }
 
 // Save/load data 

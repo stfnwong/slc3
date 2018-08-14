@@ -44,6 +44,7 @@ class SymbolTable
 typedef struct{
     std::string  symbol;     //char* symbol // <- faster?;
     std::string  label;     //char* label // <- faster?;
+    std::string  errstr;
     Opcode       opcode;
     unsigned int line_num;
     unsigned int addr;
@@ -78,6 +79,7 @@ class SourceInfo
     private:
         std::vector <LineInfo> line_info;
         std::string line_to_string(const LineInfo& l);
+        bool error;
         
     public:
         SourceInfo();
@@ -91,6 +93,8 @@ class SourceInfo
         unsigned int getNumError(void) const;
         unsigned int numInstance(const uint16_t& op) const;
         unsigned int numInstance(const std::string& m) const;
+        bool         hasError(void) const;
+        void         setError(const bool e);
 
         // Save/load data
         int write(const std::string& filename);

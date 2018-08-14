@@ -13,27 +13,31 @@
 #include "opcode.hpp"
 
 // OPCODE CONSTANTS 
-#define LC3_ADD  0x01
-#define LC3_AND  0x05
-#define LC3_BR   0x00
+#define LC3_ADD   0x01
+#define LC3_AND   0x05
+#define LC3_BR    0x00
 // TODO : variations with flags get constants here for now
-#define LC3_BRP  0x00
-#define LC3_BRZ  0x00
-#define LC3_BRN  0x00
+#define LC3_BRP   0x00
+#define LC3_BRZ   0x00
+#define LC3_BRN   0x00
+#define LC3_BRNZ  0x00
+#define LC3_BRZP  0x00
+#define LC3_BRNP  0x00
+#define LC3_BRNZP 0x00
 //#define LC3_JMP  0x0C
-#define LC3_JSR  0x04
-#define LC3_LD   0x02
-#define LC3_LDI  0x0A
-#define LC3_LDR  0x06
-#define LC3_LEA  0x0E
-#define LC3_NOT  0x09
+#define LC3_JSR   0x04
+#define LC3_LD    0x02
+#define LC3_LDI   0x0A
+#define LC3_LDR   0x06
+#define LC3_LEA   0x0E
+#define LC3_NOT   0x09
 //#define LC3_RET  0x0C   
-#define LC3_RTI  0x08
-#define LC3_ST   0x03
-#define LC3_STI  0x0B
-#define LC3_STR  0x07
-#define LC3_TRAP 0x0F
-#define LC3_RES  0x0D
+#define LC3_RTI   0x08
+#define LC3_ST    0x03
+#define LC3_STI   0x0B
+#define LC3_STR   0x07
+#define LC3_TRAP  0x0F
+#define LC3_RES   0x0D
 
 #define LC3_JMP_RET 0x0C
 
@@ -69,6 +73,10 @@ const Opcode lc3_op_list[] = {
     {LC3_BR,  "BR"},
     {LC3_BRP, "BRp"},
     {LC3_BRN, "BRn"},
+    {LC3_BRZ, "BRz"},
+    {LC3_BRZP, "BRzp"},
+    {LC3_BRNZ, "BRnz"},
+    {LC3_BRNZP, "BRnzp"},
     // Trap vector 
     {LC3_TRAP, "TRAP"}
 };
