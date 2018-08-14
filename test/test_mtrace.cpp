@@ -29,11 +29,13 @@ bool lc3proc_equal(const LC3Proc& p1, const LC3Proc& p2)
 {
     if(p1.pc != p2.pc)
         return false;
-    if(p1.n != p2.n)
+    if(p1.flags != p2.flags)
         return false;
-    if(p1.p != p2.p)
+    if(p1.mar != p2.mar)
         return false;
-    if(p1.z != p2.z)
+    if(p1.mdr != p2.mdr)
+        return false;
+    if(p1.ir != p2.ir)
         return false;
     for(int g = 0; g < 8; g++)
     {
@@ -64,15 +66,20 @@ TEST_F(TestMTrace, test_add)
         p.pc = t;
         for(int g = 0; g < 8; g++)
             p.gpr[g] = g + t;
-        p.n = false;
-        p.p = false;
-        p.z = false;
+        p.flags = 0;
         test_trace[t] = p;
     }
 
     // First test the trace object with just trace_size procs
     for(unsigned int t = 0; t < this->trace_size; t++)
         trace.add(test_trace[t]);
+
+    std::cout << "Dumping processor states to console... " << std::endl;
+    for(unsigned int t = 0; t < this->trace_size; t++)
+    {
+        LC3Proc p = trace.get(t);
+        std::cout << p.toString();
+    }
 
     std::vector<LC3Proc> trace_dump = trace.dump();
     for(unsigned int t = 0; t < trace_dump.size(); t++)
@@ -81,7 +88,9 @@ TEST_F(TestMTrace, test_add)
     // Now try adding more data so that the trace 'wraps'
     trace.add(test_trace[this->trace_size + 1]);
     trace_dump = trace.dump();
-    ASSERT_EQ(true, lc3proc_equal(trace_dump[0], test_trace[this->trace_size+1]));
+    //ASSERT_EQ(true, lc3proc_equal(trace_dump[0], test_trace[this->trace_size+1]));
+    trace_dump[0].diff(test_trace[this->trace_size+1]);
+    ASSERT_EQ(true, trace_dump[0] == test_trace[this->trace_size+1]);
     ASSERT_EQ(this->trace_size, trace.getTraceSize());
     // Offset the PC by 256
     for(unsigned int t = 0; t < test_trace.size(); t++)

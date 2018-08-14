@@ -27,10 +27,6 @@
 #define ASM_ORIG    0x04
 #define ASM_STRINGZ 0x05
 
-//typedef enum {
-//    ASM_INVALID, ASM_BLKW, ASM_END, ASM_FILL, ASM_ORIG, ASM_STRINGZ
-//} LEX_ASM_DIR;
-
 // Assembler directives that are not trap vectors 
 static Opcode LEX_ASM_DIRECTIVE_OPCODES[] = {
     {ASM_BLKW,    ".BLKW"},
@@ -83,7 +79,8 @@ class Lexer
         
     private:
         // Symbol parse
-        bool getNextArg(void);
+        bool scanArg(void);
+        bool checkArgToken(void);
         void parseOpcode3Args(void);
         //void parseOpcode(const Opcode& o);
         void parseOpcode(void);
