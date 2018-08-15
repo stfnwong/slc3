@@ -91,15 +91,36 @@ TEST_F(TestAssembler, test_init)
     ASSERT_EQ(0, as.getNumErr());
 }
 
-Program get_asm_add_expected_program(void)
+Program get_add_expected_program(void)
 {
     Program prog;
     Instr instr;
 
     // Line 6 - .ORIG x3000
-    // Line 7 - LD R1, Val1  (0x3005)
+    // Line 7 - LD R1, Val1  (0x3004))
+    instr.adr = 0x3000;
+    instr.ins = 0x2203;
+    prog.add(instr);
+    // Line 8 - LD R2, Val2 (0x3005)
     instr.adr = 0x3001;
-    //instr.ins  = 0x
+    instr.ins = 0x2403;
+    prog.add(instr);
+    // Line 9 - ADD R3,R1,R2
+    instr.adr = 0x3002;
+    instr.ins = 0x1642;
+    prog.add(instr);
+    // Line 10 (HALT)
+    instr.adr = 0x3003;
+    instr.ins = 0xF025;
+    prog.add(instr);
+    // Line 11 (Val1 : .FILL #1
+    instr.adr = 0x3004;
+    instr.ins = 0x0001;
+    prog.add(instr);
+    // Line 12 (Val2 : .FILL #2)
+    instr.adr = 0x3005;
+    instr.ins = 0x0002;
+    prog.add(instr);
 
     return prog;
 }
@@ -117,18 +138,29 @@ TEST_F(TestAssembler, test_asm_add)
     ASSERT_EQ(0, as.getNumErr());
     as.assemble();
 
-    Program prog = as.getProgram();
-    std::vector<Instr> instructions = as.getInstrs();
+    Program as_prog = as.getProgram();
+    Program ex_prog = get_add_expected_program();
+    std::vector<Instr> as_instructions = as_prog.getInstr();
+    std::vector<Instr> ex_instructions = ex_prog.getInstr();
     std::cout << "Assembly output for program " << src_filename << std::endl;
     std::cout << " N     ADDR   DATA " << std::endl;
-    for(unsigned int idx = 0; idx < instructions.size(); idx++)
+    for(unsigned int idx = 0; idx < ex_instructions.size(); idx++)
     {
         std::cout << "[" << std::dec << std::setw(4) << std::setfill('0') << idx << "]";
-        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].adr;
-        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << instructions[idx].ins;
+        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << ex_instructions[idx].adr;
+        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << ex_instructions[idx].ins;
         std::cout << std::endl;
     }
-    prog.save(this->asm_prog_outfile);
+
+    // Compare
+    for(unsigned int i = 0; i < ex_instructions.size(); ++i)
+    {
+        std::cout << "Comparing instruction " << i+1 << "...";
+        ASSERT_EQ(ex_instructions[i].adr, as_instructions[i].adr);
+        ASSERT_EQ(ex_instructions[i].ins, as_instructions[i].ins);
+        std::cout << std::endl;
+    }
+    as_prog.save(this->asm_prog_outfile);
 }
 
 Program get_sentinel_expected_program(void)

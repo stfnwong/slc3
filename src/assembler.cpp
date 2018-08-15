@@ -219,6 +219,7 @@ void Assembler::asm_lea(const LineInfo& line)
 void Assembler::asm_ld(const LineInfo& line)
 {
     Instr instr;
+    int16_t offset = 0;
 
     instr.ins = 0;
     if(this->verbose)
@@ -228,7 +229,8 @@ void Assembler::asm_ld(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    instr.ins = (instr.ins | this->asm_pc9(line.imm));
+    offset = this->asm_pc9(line.imm) - (line.addr + 1);
+    instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -364,7 +366,7 @@ void Assembler::asm_trap(const LineInfo& line)
             << std::dec << line.line_num << ") assembling TRAP" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
-    instr.ins = (instr.ins | this->asm_in8(instr.ins));
+    instr.ins = (instr.ins | this->asm_in8(line.imm));
     instr.adr = line.addr;
 
     this->program.add(instr);
