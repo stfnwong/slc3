@@ -31,6 +31,10 @@ inline uint16_t Assembler::asm_arg3(const uint16_t arg)
 {
     return 0x0000 | (arg);
 }
+inline uint16_t Assembler::asm_imm5(const uint16_t arg)
+{
+    return 0x0000 | (arg & 0x001F);
+}
 inline uint16_t Assembler::asm_of6(const uint16_t arg)
 {
     return 0x0000 | (arg & 0x001F);
@@ -60,13 +64,17 @@ void Assembler::asm_add(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling ADD" << std::endl;
+            << std::dec << line.line_num << ") assembling ADD" << std::endl;
     }
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
     instr.ins = (instr.ins | this->asm_arg2(line.arg2));
-    instr.ins = (instr.ins | this->asm_arg3(line.arg3));
     if(line.is_imm)
+    {
         instr.ins = (instr.ins | (1 << 5));
+        instr.ins = (instr.ins | this->asm_imm5(line.imm));
+    }
+    else
+        instr.ins = (instr.ins | this->asm_arg3(line.arg3));
     instr.ins  = (instr.ins | (line.opcode.opcode << 12));
     instr.adr = line.addr;
 
@@ -85,7 +93,7 @@ void Assembler::asm_and(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling AND" << std::endl;
+            << std::dec << line.line_num << ") assembling AND" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins| this->asm_arg1(line.arg1));
@@ -105,16 +113,19 @@ void Assembler::asm_and(const LineInfo& line)
 void Assembler::asm_br(const LineInfo& line)
 {
     Instr instr;
+    int16_t offset = 0;
 
     instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling BR" << std::endl;
+            << std::dec << line.line_num << ") assembling BR" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | (line.flags << 9));
-    instr.ins = (instr.ins | (line.imm & 0x01FF));
+    // Figure out the offset 
+    offset = line.imm - (line.addr + 1);
+    instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -132,7 +143,7 @@ void Assembler::asm_jmp(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling JMP" << std::endl;
+            << std::dec << line.line_num << ") assembling JMP" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg2(instr.ins));
@@ -156,7 +167,7 @@ void Assembler::asm_jsr(const LineInfo& line)
         if(this->verbose)
         {
             std::cout << "[" << __FUNCTION__ << "] (src line " 
-                << line.line_num << ") assembling JSR" << std::endl;
+                << std::dec << line.line_num << ") assembling JSR" << std::endl;
         }
         instr.ins = (instr.ins | this->asm_pc11(instr.ins));
     }
@@ -165,7 +176,7 @@ void Assembler::asm_jsr(const LineInfo& line)
         if(this->verbose)
         {
             std::cout << "[" << __FUNCTION__ << "] (src line " 
-                << line.line_num << ") assembling JSRR" << std::endl;
+                << std::dec << line.line_num << ") assembling JSRR" << std::endl;
         }
         instr.ins = (instr.ins | this->asm_arg2(instr.ins));
     }
@@ -183,16 +194,19 @@ void Assembler::asm_jsr(const LineInfo& line)
 void Assembler::asm_lea(const LineInfo& line)
 {
     Instr instr;
+    int16_t offset = 0;
 
     instr.ins = 0;
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling LEA" << std::endl;
+            << std::dec << line.line_num << ") assembling LEA" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    instr.ins = (instr.ins | this->asm_pc9(line.imm));
+    offset = this->asm_pc9(line.imm) - (line.addr + 1);
+    //instr.ins = (instr.ins | this->asm_pc9(line.imm));
+    instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -210,7 +224,7 @@ void Assembler::asm_ld(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling LD" << std::endl;
+            << std::dec << line.line_num << ") assembling LD" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
@@ -232,11 +246,12 @@ void Assembler::asm_ldr(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling LDR" << std::endl;
+            << std::dec << line.line_num << ") assembling LDR" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    instr.ins = (instr.ins | this->asm_of6(line.imm));
+    instr.ins = (instr.ins | this->asm_arg2(line.arg2)); 
+    instr.ins = (instr.ins | (this->asm_of6(line.imm) & 0x003F));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -254,7 +269,7 @@ void Assembler::asm_not(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling NOT" << std::endl;
+            << std::dec << line.line_num << ") assembling NOT" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
@@ -278,7 +293,7 @@ void Assembler::asm_st(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling ST" << std::endl;
+            << std::dec << line.line_num << ") assembling ST" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
@@ -300,7 +315,7 @@ void Assembler::asm_str(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling STR" << std::endl;
+            << std::dec << line.line_num << ") assembling STR" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
@@ -323,7 +338,7 @@ void Assembler::asm_sti(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling STI" << std::endl;
+            << std::dec << line.line_num << ") assembling STI" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
@@ -346,7 +361,7 @@ void Assembler::asm_trap(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " 
-            << line.line_num << ") assembling TRAP" << std::endl;
+            << std::dec << line.line_num << ") assembling TRAP" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_in8(instr.ins));
@@ -364,7 +379,7 @@ void Assembler::dir_blkw(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
-            line.line_num << ") assembling .BLKW" << std::endl;
+            std::dec << line.line_num << ") assembling .BLKW" << std::endl;
     }
 
     unsigned int addr;
@@ -381,7 +396,7 @@ void Assembler::dir_fill(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
-            line.line_num << ") assembling .FILL" << std::endl;
+            std::dec << line.line_num << ") assembling .FILL" << std::endl;
     }
     this->program.writeMem(line.addr, line.imm);
 }
@@ -395,7 +410,7 @@ void Assembler::dir_orig(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
-            line.line_num << ") assembling .ORIG" << std::endl;
+            std::dec << line.line_num << ") assembling .ORIG" << std::endl;
     }
     this->start_addr = line.imm;
 }
@@ -409,7 +424,7 @@ void Assembler::dir_stringz(const LineInfo& line)
     if(this->verbose)
     {
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
-            line.line_num << ") assembling .STRINGZ" << std::endl;
+            std::dec << line.line_num << ") assembling .STRINGZ" << std::endl;
     }
     
     unsigned int addr, n;
@@ -443,15 +458,6 @@ void Assembler::assemble(void)
         // Handle directives 
         if(cur_line.is_directive)
         {
-            if(this->verbose)
-            {
-                std::cout << "[" << __FUNCTION__ << "] (src line " << 
-                    cur_line.line_num << ") is directive " <<
-                    cur_line.opcode.mnemonic << std::endl;
-            }
-            // TODO: some kind of indirection that allows for 
-            // flexibility (jump table)?
-            // TODO : Change lexer so that Directives are mnemonic
             if(cur_line.opcode.mnemonic == ".BLKW")
                 this->dir_blkw(cur_line);
             else if(cur_line.opcode.mnemonic == ".FILL")

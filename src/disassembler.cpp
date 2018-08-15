@@ -23,52 +23,42 @@ Disassembler::Disassembler()
 Disassembler::~Disassembler() {} 
 
 // ===== Instruction disassembly
-inline bool Disassembler::is_imm(const uint16_t instr) const
-{
-    return (instr & 0x0020) ? true : false;
-}
-
-inline uint8_t Disassembler::dis_op1(const uint16_t instr) const
-{
-    return (instr & 0x0E00) >> 8;
-}
-
-inline uint8_t Disassembler::dis_op2(const uint16_t instr) const
-{
-    return (instr & 0x01E0) >> 5;
-}
-
-inline uint8_t Disassembler::dis_op3(const uint16_t instr) const
-{
-    return (instr & 0x0006);
-}
-
-inline uint8_t Disassembler::dis_flags(const uint16_t instr) const
-{
-    return (instr & 0x0E00) >> 8;
-}
-
 inline uint8_t Disassembler::dis_opcode(const uint16_t instr) const
 {
     return (instr & 0xF000) >> 11;
 }
-
+inline bool Disassembler::is_imm(const uint16_t instr) const
+{
+    return (instr & 0x0020) ? true : false;
+}
+inline uint8_t Disassembler::dis_op1(const uint16_t instr) const
+{
+    return (instr & 0x0E00) >> 8;
+}
+inline uint8_t Disassembler::dis_op2(const uint16_t instr) const
+{
+    return (instr & 0x01E0) >> 5;
+}
+inline uint8_t Disassembler::dis_op3(const uint16_t instr) const
+{
+    return (instr & 0x0006);
+}
+inline uint8_t Disassembler::dis_flags(const uint16_t instr) const
+{
+    return (instr & 0x0E00) >> 8;
+}
 inline uint8_t Disassembler::dis_of6(const uint16_t instr) const
 {
     return (instr & 0x003F);
 }
-
 inline uint16_t Disassembler::dis_pc9(const uint16_t instr) const
 {
     return (instr & 0x1FF);
 }
-
 inline uint16_t Disassembler::dis_pc11(const uint16_t instr) const
 {
     return (instr & 0x0EFF);
-
 }
-
 
 // File load 
 int Disassembler::read(const std::string& filename)

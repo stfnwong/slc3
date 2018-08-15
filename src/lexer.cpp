@@ -84,13 +84,20 @@ void Lexer::advance(void)
     }
 }
 
+/*
+ * exhausted()
+ * Returns true when there is no more input to lex
+ */
 bool Lexer::exhausted(void) const
 {
     return (this->cur_char == '\0' ||
             this->cur_pos >= this->src.size()) ? true : false;
 }
 
-// TODO : something is up with isSpace()
+/* 
+ * skipWhitespace()
+ * Eat a sequence of continuous whitespace characters
+ */
 void Lexer::skipWhitespace(void) 
 {
     while(!this->exhausted())
@@ -704,7 +711,7 @@ void Lexer::parseDirective(void)
             this->line_info.imm = arg;
             break;
         case ASM_ORIG:
-            this->cur_addr = arg;
+            this->cur_addr = arg-1; // will be incremented at end of line
             this->line_info.imm = arg;
             break;
         case ASM_STRINGZ:
@@ -956,9 +963,9 @@ void Lexer::loadFile(const std::string& filename)
 
     if(this->verbose)
     {
-        std::cout << "[" << __FUNCTION__ << "] read " << 
-            this->src.length() << " characters from file ["
-            << filename << "]" << std::endl;
+        std::cout << "[" << __FUNCTION__ << "] read " 
+        << std::dec << this->src.length() << " characters from file ["
+        << filename << "]" << std::endl;
     }
 
     infile.close();

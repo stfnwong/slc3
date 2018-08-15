@@ -36,6 +36,7 @@ class Assembler
         inline uint16_t asm_arg1(const uint16_t arg);
         inline uint16_t asm_arg2(const uint16_t arg);
         inline uint16_t asm_arg3(const uint16_t arg);
+        inline uint16_t asm_imm5(const uint16_t arg);
         inline uint16_t asm_of6(const uint16_t arg);
         inline uint8_t  asm_in8(const uint16_t arg);
         inline uint16_t asm_pc9(const uint16_t arg);

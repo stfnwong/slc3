@@ -217,15 +217,15 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
         oss << ".";
     // Insert args
     oss << "  ";
-    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg1;
-    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg2;
-    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg3;
-    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.imm;
+    oss << " $" << std::right << std::hex << std::setw(4) << std::setfill('0') << l.arg1;
+    oss << " $" << std::right << std::hex << std::setw(4) << std::setfill('0') << l.arg2;
+    oss << " $" << std::right << std::hex << std::setw(4) << std::setfill('0') << l.arg3;
+    oss << " $" << std::right << std::hex << std::setw(4) << std::setfill('0') << l.imm;
 
     // (Next line) Text 
     oss << std::endl;
-    oss << "Label [" << std::setw(16) << std::setfill(' ') << l.label << "] ";
-    oss << "Symbol[" << std::setw(16) << std::setfill(' ') << l.symbol << "] ";
+    oss << "Label [" << std::left << std::setw(16) << std::setfill(' ') << l.label << "] ";
+    oss << "Symbol[" << std::left << std::setw(16) << std::setfill(' ') << l.symbol << "] ";
 
     oss << std::endl;
     

@@ -114,7 +114,7 @@ SourceInfo get_add_test_source_info(void)
     // Line 6 (.ORIG x3000)
     initLineInfo(line);
     line.line_num        = 6;
-    line.addr            = 0x3000;
+    line.addr            = 0x3000-1;
     line.opcode.mnemonic = ".ORIG";
     line.opcode.opcode   = 0;
     line.imm             = 0x3000;
@@ -123,27 +123,27 @@ SourceInfo get_add_test_source_info(void)
     // Line 7 (LD, R1, Val1)
     initLineInfo(line);
     line.line_num        = 7;
-    line.addr            = 0x3001;
+    line.addr            = 0x3000;
     line.opcode.mnemonic = "LD";
     line.opcode.opcode   = 0x02;
     line.arg1            = 0x01;
-    line.imm             = 0x3005;
+    line.imm             = 0x3004;
     line.symbol          = "Val1";
     info.add(line);
     // Line 8 (LD,R2,Val2)
     initLineInfo(line);
     line.line_num        = 8;
-    line.addr            = 0x3002;
+    line.addr            = 0x3001;
     line.opcode.mnemonic = "LD";
     line.opcode.opcode   = 0x02;
     line.arg1            = 0x02;
-    line.imm             = 0x3006;
+    line.imm             = 0x3005;
     line.symbol          = "Val2";
     info.add(line);
     // Line 9 (ADD R3,R1,R2)
     initLineInfo(line);
     line.line_num        = 9;
-    line.addr            = 0x3003;
+    line.addr            = 0x3002;
     line.opcode.mnemonic = "ADD";
     line.opcode.opcode   = 0x01;
     line.arg1            = 0x03;
@@ -153,7 +153,7 @@ SourceInfo get_add_test_source_info(void)
     // Line 10 (HALT)
     initLineInfo(line);
     line.line_num        = 10;
-    line.addr            = 0x3004;
+    line.addr            = 0x3003;
     line.opcode.opcode   = 0x0F;
     line.opcode.mnemonic = "TRAP";
     line.imm             = 0x25;
@@ -161,7 +161,7 @@ SourceInfo get_add_test_source_info(void)
     // Line 11 (Val1 .FILL #1)
     initLineInfo(line);
     line.line_num        = 11;
-    line.addr            = 0x3005;
+    line.addr            = 0x3004;
     line.opcode.opcode   = 0x0;
     line.opcode.mnemonic = ".FILL";
     line.label           = "Val1";
@@ -172,7 +172,7 @@ SourceInfo get_add_test_source_info(void)
     // Line 12 (Val2 .FILL #2)
     initLineInfo(line);
     line.line_num        = 12;
-    line.addr            = 0x3006;
+    line.addr            = 0x3005;
     line.opcode.opcode   = 0x0;
     line.opcode.mnemonic = ".FILL";
     line.label           = "Val2";
@@ -183,7 +183,7 @@ SourceInfo get_add_test_source_info(void)
     // Line 12 (.END)
     initLineInfo(line);
     line.line_num        = 13;
-    line.addr            = 0x3007;
+    line.addr            = 0x3006;
     line.opcode.opcode   = 0x0;
     line.opcode.mnemonic = ".END";
     line.is_directive    = true;
@@ -200,7 +200,7 @@ SourceInfo get_sentinel_test_source_info(void)
     // Line 6 (.ORIG x3000)
     initLineInfo(line);
     line.line_num        = 6;
-    line.addr            = 0x3000;
+    line.addr            = 0x3000-1;
     line.opcode.mnemonic = ".ORIG";
     line.opcode.opcode   = 0;
     line.imm             = 0x3000;
@@ -209,17 +209,17 @@ SourceInfo get_sentinel_test_source_info(void)
     // Line 7 (LD, R1, Val1)
     initLineInfo(line);
     line.line_num        = 7;
-    line.addr            = 0x3001;
+    line.addr            = 0x3000;
     line.opcode.mnemonic = "LEA";
     line.opcode.opcode   = 0xE;
     line.arg1            = 0x01;
-    line.imm             = 0x300A;
+    line.imm             = 0x3009;
     line.symbol          = "FirstVal";
     info.add(line);
     // Line 8 (AND R3,R3,#0)
     initLineInfo(line);
     line.line_num        = 8;
-    line.addr            = 0x3002;
+    line.addr            = 0x3001;
     line.opcode.mnemonic = "AND";
     line.opcode.opcode   = 0x05;
     line.arg1            = 3;
@@ -230,7 +230,7 @@ SourceInfo get_sentinel_test_source_info(void)
     // Line 9 (LDR R4,R1,#0)
     initLineInfo(line);
     line.line_num        = 9;
-    line.addr            = 0x3003;
+    line.addr            = 0x3002;
     line.opcode.mnemonic = "LDR";
     line.opcode.opcode   = 0x06;
     line.arg1            = 4;
@@ -241,19 +241,19 @@ SourceInfo get_sentinel_test_source_info(void)
     // Line 10 (TestEnd)
     initLineInfo(line);
     line.line_num        = 10;
-    line.addr            = 0x3004;
+    line.addr            = 0x3003;
     line.opcode.mnemonic = "BRn";
     line.flags           = 0x4;     // negative flag
     line.opcode.opcode   = 0x0;
     line.symbol          = "Done";
     line.label           = "TestEnd";
     line.is_label        = true;
-    line.imm             = 0x3009;  // addr of 'Done'
+    line.imm             = 0x3008;  // addr of 'Done'
     info.add(line);
     // Line 11 (ADD R3,R3,R4)
     initLineInfo(line);
     line.line_num        = 11;
-    line.addr            = 0x3005;
+    line.addr            = 0x3004;
     line.opcode.mnemonic = "ADD";
     line.opcode.opcode   = 0x01;
     line.arg1            = 3;
@@ -263,7 +263,7 @@ SourceInfo get_sentinel_test_source_info(void)
     // Line 12 (ADD, R1, R1, #1)
     initLineInfo(line);
     line.line_num        = 12;
-    line.addr            = 0x3006;
+    line.addr            = 0x3005;
     line.opcode.mnemonic = "ADD";
     line.opcode.opcode   = 0x01;
     line.arg1            = 1;
@@ -274,7 +274,7 @@ SourceInfo get_sentinel_test_source_info(void)
     // Line 13 (LDR, R4, R1, #0)
     initLineInfo(line);
     line.line_num        = 13;
-    line.addr            = 0x3007;
+    line.addr            = 0x3006;
     line.opcode.mnemonic = "LDR";
     line.opcode.opcode   = 0x06;
     line.arg1            = 4;
@@ -285,20 +285,19 @@ SourceInfo get_sentinel_test_source_info(void)
     // Line 14 (BRnzp TestEnd)
     initLineInfo(line);
     line.line_num        = 14;
-    line.addr            = 0x3008;
+    line.addr            = 0x3007;
     line.opcode.mnemonic = "BRnzp";
     line.flags           = 0x7;     // all flags
     line.opcode.opcode   = 0x0;
     line.symbol          = "TestEnd";
-    line.imm             = 0x3004;
+    line.imm             = 0x3003;
     info.add(line);
     // Line 16 (Done: Halt)
     initLineInfo(line);
     line.line_num        = 16;
-    line.addr            = 0x3009;
+    line.addr            = 0x3008;
     line.opcode.mnemonic = "TRAP";
     line.opcode.opcode   = 0xF;
-    //line.imm             = 0x2500;
     line.imm             = 0x25;
     line.label           = "Done";
     line.is_label        = true;
@@ -306,7 +305,7 @@ SourceInfo get_sentinel_test_source_info(void)
     // Line 17 (FirstVal: .FILL #64)
     initLineInfo(line);
     line.line_num        = 17;
-    line.addr            = 0x300A;
+    line.addr            = 0x3009;
     line.opcode.mnemonic = ".FILL";
     line.opcode.opcode   = 0x0;
     line.imm             = 64;
@@ -399,50 +398,6 @@ TEST_F(TestLexer, test_lex_sentinel)
         std::cout << " done" << std::endl;
     }
 }
-
-// TODO : Removed this test for a while until I have a better method of managing
-// the relatively large amount of text output
-//
-//TEST_F(TestLexer, test_lex_pow)
-//{
-//    //ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
-//    SourceInfo lsource;
-//    Lexer l(this->op_table);
-//    l.setVerbose(true);
-//    l.loadFile(this->src_file);
-//
-//    // Lex the source file
-//    lsource = l.lex();
-//
-//    // Dump the source info to console
-//    std::cout << "[" << __FUNCTION__ << "] Lexer created info for " << lsource.getNumLines() << " lines" << std::endl;
-//    for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
-//        lsource.printLine(idx);
-//
-//    // TODO: test that this is correct - need a known good sourceinfo to compare against
-//    // May need to make this by hand...
-//    unsigned int num_ops;
-//    std::cout << "Opcodes by frequency: " << std::endl;
-//    for(unsigned int n = 0; n < this->op_table.getNumOps(); n++)
-//    {
-//        Opcode op;
-//        this->op_table.get(n, op);
-//        num_ops = lsource.numInstance(op.opcode);
-//        std::cout << "[" << std::hex << std::setw(4) << op.opcode 
-//            << "] (" << op.mnemonic << ") - " << num_ops << std::endl;
-//    }
-//
-//    // Also dump the symbol table 
-//    SymbolTable sym_table = l.dumpSymTable();
-//
-//    std::cout << "[" << __FUNCTION__ << "] Dumping symbol table" << std::endl;
-//    for(unsigned int s = 0; s < sym_table.getNumSyms(); ++s)
-//    {
-//        Symbol sym = sym_table.get(s);
-//        std::cout << std::left << std::setw(12) << std::setfill(' ') << 
-//            sym.label << " : 0x" << std::hex << std::setfill('0') << sym.addr << std::endl;
-//    }
-//}
 
 int main(int argc, char *argv[])
 {

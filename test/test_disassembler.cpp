@@ -31,12 +31,25 @@ OpcodeTable test_build_op_table(void)
         {LC3_LDR, "LDR"},
         {LC3_LEA, "LEA"},
         {LC3_ST,  "ST"},
+        {LC3_STI, "STI"},
         {LC3_STR, "STR"},
         {LC3_NOT, "NOT"},
+        {LC3_RTI, "RTI"},
+        // Jump instr 
+        {LC3_JMP_RET, "JMP"},
+        {LC3_JMP_RET, "RET"},
+        {LC3_JSR, "JSR"},
+        {LC3_JSR, "JSRR"},
         // BR and variants 
         {LC3_BR,  "BR"},
-        {LC3_BRP,  "BRp"},
-        {LC3_BRN,  "BRn"},
+        {LC3_BRP, "BRp"},
+        {LC3_BRN, "BRn"},
+        {LC3_BRZ, "BRz"},
+        {LC3_BRZP, "BRzp"},
+        {LC3_BRNZ, "BRnz"},
+        {LC3_BRNZP, "BRnzp"},
+        // Trap vector 
+        {LC3_TRAP, "TRAP"}
     };
     // iterate over this in the C++ way
     for(const Opcode &op : opcode_list)
@@ -67,7 +80,6 @@ class TestDisassembler : public ::testing::Test
 void TestDisassembler::SetUp(void)
 {
     this->op_table = test_build_op_table();
-    ASSERT_EQ(this->expected_num_ops, this->op_table.getNumOps());
 }
 
 TEST_F(TestDisassembler, test_init)
@@ -107,6 +119,36 @@ TEST_F(TestDisassembler, test_dis_file)
     SourceInfo dsource = dis.getSourceInfo();
     for(unsigned int idx = 0; idx < dsource.getNumLines(); ++idx)
         dsource.printLine(idx);
+}
+
+TEST_F(TestDisassembler, test_dis_sentinel)
+{
+    int status;
+    std::string src_filename = "data/sentinel.asm";
+    std::string out_filename = "data/sentinel.dis";
+    // Prepare some assembly output
+    SourceInfo lex_output;
+    Lexer lexer(this->op_table, src_filename);
+    lexer.setVerbose(false);
+    lex_output = lexer.lex();
+    Assembler as(lex_output);
+    as.setVerbose(false);
+    as.assemble();
+
+    // Write binary to disk
+    Program prog = as.getProgram();
+    prog.setVerbose(true);
+    prog.build();
+    status = prog.save(out_filename);
+    ASSERT_EQ(0, status);
+
+    // disassemble the output
+    Disassembler dis;
+    dis.setVerbose(true);
+    status = dis.read(out_filename);
+    ASSERT_EQ(0, status);
+    std::cout << "Disassembling file [" << out_filename << "]" << std::endl;
+    dis.disassemble();
 }
 
 int main(int argc, char *argv[])
