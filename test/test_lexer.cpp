@@ -248,6 +248,7 @@ SourceInfo get_sentinel_test_source_info(void)
     line.symbol          = "Done";
     line.label           = "TestEnd";
     line.is_label        = true;
+    line.imm             = 0x3009;  // addr of 'Done'
     info.add(line);
     // Line 11 (ADD R3,R3,R4)
     initLineInfo(line);
@@ -285,7 +286,7 @@ SourceInfo get_sentinel_test_source_info(void)
     initLineInfo(line);
     line.line_num        = 14;
     line.addr            = 0x3008;
-    line.opcode.mnemonic = "BR";
+    line.opcode.mnemonic = "BRnzp";
     line.flags           = 0x7;     // all flags
     line.opcode.opcode   = 0x0;
     line.symbol          = "TestEnd";
@@ -297,7 +298,8 @@ SourceInfo get_sentinel_test_source_info(void)
     line.addr            = 0x3009;
     line.opcode.mnemonic = "TRAP";
     line.opcode.opcode   = 0xF;
-    line.imm             = 0x2500;
+    //line.imm             = 0x2500;
+    line.imm             = 0x25;
     line.label           = "Done";
     line.is_label        = true;
     info.add(line);
@@ -310,6 +312,7 @@ SourceInfo get_sentinel_test_source_info(void)
     line.imm             = 64;
     line.label           = "FirstVal";
     line.is_label        = true;
+    line.is_directive    = true;
     info.add(line);
 
     return info;
@@ -390,11 +393,11 @@ TEST_F(TestLexer, test_lex_sentinel)
         LineInfo lex_line = lsource.get(idx);
         LineInfo exp_line = expected_info.get(idx);
         std::cout << "Checking line " << idx+1 << "(source line " << std::dec << lex_line.line_num << ") ...";
+        std::cout << "<" << lex_line.opcode.mnemonic << ">";
+        printLineDiff(lex_line, exp_line);
         ASSERT_EQ(true, compLineInfo(lex_line, exp_line));
         std::cout << " done" << std::endl;
     }
-
-
 }
 
 // TODO : Removed this test for a while until I have a better method of managing

@@ -28,14 +28,14 @@ class SymbolTable
     public:
         SymbolTable();
         ~SymbolTable();
-        void add(const Symbol& s);
-        void update(const unsigned int idx, const Symbol& s);
-        Symbol get(const unsigned int idx) const;
-        uint16_t getAddr(const std::string& label) const;
-        void init(void);
+        void         add(const Symbol& s);
+        void         update(const unsigned int idx, const Symbol& s);
+        Symbol       get(const unsigned int idx) const;
+        uint16_t     getAddr(const std::string& label) const;
+        void         init(void);
         unsigned int getNumSyms(void) const;
         // debug 
-        void dump(void);
+        void         dump(void);
 };
 
 // NOTE: This is a LC3 specific lineinfo
@@ -69,6 +69,7 @@ void initLineInfo(LineInfo& l);
  * Compare two LineInfo structs
  */
 bool compLineInfo(const LineInfo& a, const LineInfo& b);
+void printLineDiff(const LineInfo& a, const LineInfo& b);
 
 /* 
  * SourceInfo
@@ -85,9 +86,9 @@ class SourceInfo
         SourceInfo();
         ~SourceInfo();
         // Add/remove lines
-        void add(const LineInfo& l);
-        void update(const unsigned int idx, const LineInfo& l);
-        LineInfo get(const unsigned int idx) const;
+        void         add(const LineInfo& l);
+        void         update(const unsigned int idx, const LineInfo& l);
+        LineInfo     get(const unsigned int idx) const;
         unsigned int getLineNum(const unsigned int idx) const;
         unsigned int getNumLines(void) const;
         unsigned int getNumError(void) const;
@@ -97,11 +98,11 @@ class SourceInfo
         void         setError(const bool e);
 
         // Save/load data
-        int write(const std::string& filename);
-        int read(const std::string& filename);
+        int          write(const std::string& filename);
+        int          read(const std::string& filename);
 
         // String / display 
-        void printLine(const unsigned int idx);
+        void         printLine(const unsigned int idx);
 }; 
 
 #endif /*__SOURCE_HPP*/

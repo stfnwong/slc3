@@ -93,13 +93,14 @@ bool Lexer::exhausted(void) const
 // TODO : something is up with isSpace()
 void Lexer::skipWhitespace(void) 
 {
-    bool space = true;
-    while(space)
+    while(!this->exhausted())
     {
-        space = (this->cur_char == ' ' ||
-                 this->cur_char == '\n' || 
-                 this->cur_char == '\t') ? true : false;
-        this->advance();
+        if(this->cur_char == ' '  || 
+           this->cur_char == '\n' || 
+           this->cur_char == '\t')
+            this->advance();
+        else
+            break;
     }
 }
 
@@ -109,28 +110,16 @@ void Lexer::skipComment(void)
         this->advance();
 }
 
-void Lexer::scanToken(void)
+void Lexer::skipSeperators(void)
 {
-    unsigned int idx = 0;
-    while(idx < (this->token_buf_size-1))
+    while(!this->exhausted())
     {
-        if(this->isSpace())
+        if(this->cur_char == ',' ||
+           this->cur_char == ':' ||
+           this->cur_char == ';')
+            this->advance();
+        else
             break;
-        if(this->isComment())
-            break;
-        if(this->cur_char == ',')
-            break;
-        this->token_buf[idx] = this->cur_char;
-        this->advance();
-        idx++;
-    }
-    this->token_buf[idx] = '\0';
-
-    if(this->verbose)
-    {
-        std::cout << "[" << __FUNCTION__ << "] (line " << std::dec << 
-            this->cur_line << ") : token_buf contains <" << 
-            std::string(this->token_buf) << "> " << std::endl;
     }
 }
 
@@ -169,7 +158,7 @@ bool Lexer::isMnemonic(void)
 }
 /*
  * isTrapOp
- * Determine if the current opcode is a TRAP 
+ * Determine if the current opcode is a valid TRAP 
  * psuedo op
  */
 bool Lexer::isTrapOp(void)
@@ -182,64 +171,63 @@ bool Lexer::isTrapOp(void)
     return (op.mnemonic != "M_INVALID") ? true : false;
 }
 
-void Lexer::skipLine(void)
-{
-    while(this->cur_char != '\n')
-        this->advance();
-    // skip ahead one
-    this->advance();
-}
-
 /*
- * scanArg()
- * Reads the next complete token into the token buffer
- * and checks if that token consistitues a valid operand
- * for an opcode. Return true if the token buffer contents
- * are a valid operand, false otherwise.
+ * isValidArg()
+ * Returns true if the token buffer contents can be interpreted as a 
+ * valid argument
  */
-bool Lexer::scanArg(void)
+bool Lexer::isValidArg(void)
 {
-    unsigned int idx = 0;
-    while(this->cur_char != ',')
-    {
-        if(this->cur_char == '\n')
-            break;
-        if(this->cur_char == ';')
-            break;
-        // eat whitespace 
-        if(this->cur_char != ' ')
-        {
-            this->token_buf[idx] = this->cur_char;
-            idx++;
-        }
-        this->advance();
-    }
-
-    this->advance();    // advance over the newline
-    this->token_buf[idx] = '\0';
-    
-    if(this->verbose)
-    {
-        std::cout << "[" << __FUNCTION__ << "] scanned argument token <"
-            << std::string(this->token_buf) << ">" << std::endl;
-    }
-
     return (this->token_buf[0] == 'r' ||
             this->token_buf[0] == 'R' || 
             this->token_buf[0] == '#' ||
             this->token_buf[0] == 'x' ||
             this->token_buf[0] == 'X') ? true : false;
 }
-/* 
- * checkArgToken()
- * Check if the contents of the token buffer constitute a valid
- * opcode argument
- */
-bool Lexer::checkArgToken(void)
+
+void Lexer::skipLine(void)
 {
-    return false;
+    while(this->cur_char != '\n')
+        this->advance();
+    // skip ahead over newline
+    this->advance();
 }
 
+/*
+ * scanToken()
+ * Scan a complete token into the token buffer
+ */
+void Lexer::scanToken(void)
+{
+    unsigned int idx = 0;
+    this->skipWhitespace();     // eat any leading whitespace 
+    this->skipSeperators();     // eat any seperators that might be left
+    while(idx < (this->token_buf_size-1))
+    {
+        if(this->cur_char == ' ')       // end 
+            break;
+        if(this->cur_char == '\n')      // newline
+            break;
+        if(this->cur_char == ';')       // comment
+            break;
+        if(this->cur_char == ',')       // seperator
+            break;
+        this->token_buf[idx] = this->cur_char;
+        this->advance();
+        idx++;
+    }
+    this->token_buf[idx] = '\0';
+    // If we are on a seperator now, advance the source pointer 
+    if(this->cur_char == ',')
+        this->advance();
+
+    if(this->verbose)
+    {
+        std::cout << "[" << __FUNCTION__ << "] (line " << std::dec << 
+            this->cur_line << ") : token_buf contains <" << 
+            std::string(this->token_buf) << "> " << std::endl;
+    }
+}
 
 /*
  * parseOpcode3Args()
@@ -251,7 +239,8 @@ void Lexer::parseOpcode3Args(void)
     bool arg_err = false;
     std::string arg;
     // Get arg1
-    if(!this->scanArg())
+    this->scanToken();
+    if(!this->isValidArg())
     {
         err_argnum = 1;
         arg_err = true;
@@ -261,7 +250,8 @@ void Lexer::parseOpcode3Args(void)
     this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
 
     // Get source 1
-    if(!this->scanArg())
+    this->scanToken();
+    if(!this->isValidArg())
     {
         err_argnum = 2;
         arg_err = true;
@@ -271,7 +261,8 @@ void Lexer::parseOpcode3Args(void)
     this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
 
     // Get source 2
-    if(!this->scanArg())
+    this->scanToken();
+    if(!this->isValidArg())
     {
         err_argnum = 3;
         arg_err = true;
@@ -298,7 +289,6 @@ ARG_ERR:
         }
         this->line_info.error = true;
         this->line_info.errstr = "Argument " + std::to_string(err_argnum) + " of opcode " + this->line_info.opcode.mnemonic + " invalid";
-        this->skipLine();
     }
 }
 
@@ -308,10 +298,6 @@ ARG_ERR:
  */
 void Lexer::parseOpcode(void)
 {
-    // TODO : How to generically parse Opcodes?  Maybe I need virtual 
-    // methods here. This won't be such a problem until I decide to 
-    // 'genericize' the assembler
-    // We got a known opcode
     Opcode o;
     this->op_table.get(std::string(this->token_buf), o);
     this->line_info.opcode = o;
@@ -365,15 +351,8 @@ void Lexer::parseOpcode(void)
                         this->line_info.flags |= LC3_FLAG_Z;
                 }
             }
-            // There should be either an immediate or a label symbol;
-            //this->scanToken();
-            //arg = std::string(this->token_buf);
-            //if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
-            //{
-            //    this->line_info.imm = std::stoi("0" + std::string(this->token_buf));
-            //}
-            
-            if(this->scanArg())      // assume literal
+            this->scanToken();
+            if(this->isValidArg())      // assume literal
             {
                 arg = std::string(this->token_buf);
                 if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
@@ -390,7 +369,8 @@ void Lexer::parseOpcode(void)
             // Decide if this is JMP or RET
             if(o.mnemonic == "JMP")
             {
-                if(!this->scanArg())
+                this->scanToken();
+                if(!this->isValidArg())
                 {
                     this->line_info.error = true;
                     this->line_info.errstr = "Failed to parse JMP argument <" + std::string(this->token_buf) + ">";
@@ -417,7 +397,8 @@ void Lexer::parseOpcode(void)
             break;
 
         case LC3_JSR:
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse JSR immediate <" + std::string(this->token_buf) + ">";
@@ -447,7 +428,8 @@ void Lexer::parseOpcode(void)
             break;
 
         case LC3_LEA:
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse LEA argument <" + std::string(this->token_buf) + ">";
@@ -472,7 +454,8 @@ void Lexer::parseOpcode(void)
         // These have a similar offset structure 
         case LC3_LD:
         case LC3_LDI:
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse LD argument <" + std::string(this->token_buf) + ">"; 
@@ -495,7 +478,8 @@ void Lexer::parseOpcode(void)
 
         case LC3_LDR:
             // Get arg1 register 
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse LDR argument <" + std::string(this->token_buf) + "> (destination register)";
@@ -504,7 +488,8 @@ void Lexer::parseOpcode(void)
             arg = std::string(this->token_buf);
             this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
             // Get base register 
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse LDR argument <" + std::string(this->token_buf) + "> (base register)";
@@ -514,7 +499,8 @@ void Lexer::parseOpcode(void)
             this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
 
             // Get offset6, which must be a literal
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse LDR argument <" + std::string(this->token_buf) + "> (offset6)"; 
@@ -528,7 +514,8 @@ void Lexer::parseOpcode(void)
 
         case LC3_NOT:
             // Get dest 
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse NOT argument <" + std::string(this->token_buf) + "> (destination register)"; 
@@ -537,7 +524,8 @@ void Lexer::parseOpcode(void)
             arg = std::string(this->token_buf);
             this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
             // Get dst 
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse NOT argument <" + std::string(this->token_buf) + "> (source register)"; 
@@ -551,7 +539,8 @@ void Lexer::parseOpcode(void)
         case LC3_ST:
         case LC3_STR:
             // Get src register 
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse ST argument <" + std::string(this->token_buf) + "> (source register)"; 
@@ -560,7 +549,8 @@ void Lexer::parseOpcode(void)
             arg = std::string(this->token_buf);
             this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
             // Get base register 
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse ST argument <" + std::string(this->token_buf) + "> (base register)"; 
@@ -570,7 +560,8 @@ void Lexer::parseOpcode(void)
             this->line_info.arg2 = std::stoi(arg.substr(1, arg.length()));
 
             // Get offset6, which must be a literal
-            if(!this->scanArg())
+            this->scanToken();
+            if(!this->isValidArg())
             {
                 this->line_info.error = true;
                 this->line_info.errstr = "Failed to parse ST argument <" + std::string(this->token_buf) + "> (offset6)"; 
@@ -630,27 +621,21 @@ void Lexer::parseTrapOpcode(void)
         case LC3_GETC:
             this->line_info.imm = 0x20;
             break;
-
         case LC3_OUT:
             this->line_info.imm = 0x21;
             break;
-
         case LC3_PUTS:
             this->line_info.imm = 0x22;
             break;
-
         case LC3_IN:
             this->line_info.imm = 0x23;
             break;
-
         case LC3_PUTSP:
             this->line_info.imm = 0x24;
             break;
-
         case LC3_HALT:
             this->line_info.imm = 0x25;
             break;
-
         default:
             this->line_info.error = true;
             this->line_info.errstr = "No implementation for opcode <" 
@@ -671,13 +656,7 @@ void Lexer::parseTrapOpcode(void)
 void Lexer::parseDirective(void)
 {
     Opcode o;
-    this->line_info.is_directive    = true;
-    // TODO: these symbols are also LC3 assembly specific, 
-    // in the generic version they will need to be moved out 
-    // to some other class / struct
-    // TODO : move these into another OpcodeTable structure for
-    // assembly directive.
-
+    this->line_info.is_directive  = true;
     this->asm_dir_table.get(std::string(this->token_buf), o);
     if(o.mnemonic == "M_INVALID" || o.mnemonic == ".INVALID")
     {
@@ -704,8 +683,7 @@ void Lexer::parseDirective(void)
         return;
 
     // Remaining directives have arguments, figure those out here 
-    this->skipWhitespace();
-    this->scanArg();
+    this->scanToken();
     // Get the arg in numerical form from string
     uint16_t arg = 0;
     std::string argstr = std::string(this->token_buf);
@@ -826,6 +804,15 @@ void Lexer::parseToken(void)
         
     // add the label, removing any trailing characters (eg ':')
     std::string label(this->token_buf);
+    // Ensure that this actually turned into a valid token 
+    if(label.length() == 0)
+    {
+        this->line_info.error = true;
+        this->line_info.errstr = "(line " + std::to_string(this->line_info.line_num) + ") Invalid label token";
+        if(this->verbose)
+            std::cout << "[" << __FUNCTION__ << "] " << this->line_info.errstr << std::endl;
+        return;
+    }
     if(label[label.length()-1] == ':')
         this->line_info.label = label.substr(0, label.length()-1);
     else
@@ -839,7 +826,7 @@ void Lexer::parseToken(void)
     s.addr  = this->cur_addr;
     std::cout << "s.label [" << s.label <<  "] s.addr : " << std::hex << s.addr << std::endl;
     this->sym_table.add(s);
-    this->skipWhitespace();
+    //this->skipWhitespace();
 }
 
 /*

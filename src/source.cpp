@@ -130,6 +130,39 @@ bool compLineInfo(const LineInfo& a, const LineInfo& b)
     return true;
 }
 
+void printLineDiff(const LineInfo& a, const LineInfo& b)
+{
+    if(a.symbol != b.symbol)
+        std::cout << "a.symbol [" << a.symbol << "] != b.symbol [" << b.symbol << "]" << std::endl;
+    if(a.label != b.label)
+        std::cout << "a.label [" << a.label << "] != b.label [" << b.label << "]" << std::endl;
+    if(a.opcode.opcode != b.opcode.opcode)
+        std::cout << "a.opcode [" << a.opcode.opcode << "] != b.opcode [" << b.opcode.opcode << "]" << std::endl;
+    if(a.opcode.mnemonic != b.opcode.mnemonic)
+        std::cout << "a.mnemonic [" << a.opcode.mnemonic << "] != b.mnemonic [" << b.opcode.mnemonic << "]" << std::endl;
+    if(a.line_num != b.line_num)
+        std::cout << "a.line_num [" << a.line_num << "] != b.line_num [" << b.line_num << "]" << std::endl;
+    if(a.addr != b.addr)
+        std::cout << "a.addr [" << a.addr << "] != b.addr [" << b.addr << "]" << std::endl;
+    if(a.flags != b.flags)
+        std::cout << "a.flags [" << a.flags << "] != b.flags [" << b.flags << "]" << std::endl;
+    if(a.arg1 != b.arg1)
+        std::cout << "a.arg1 [" << a.arg1 << "] != b.arg1 [" << b.arg1 << "]" << std::endl;
+    if(a.arg2 != b.arg2)
+        std::cout << "a.arg2 [" << a.arg2 << "] != b.arg2 [" << b.arg2 << "]" << std::endl;
+    if(a.arg3 != b.arg3)
+        std::cout << "a.arg3 [" << a.arg3 << "] != b.arg3 [" << b.arg3 << "]" << std::endl;
+    if(a.imm != b.imm)
+        std::cout << "a.imm [" << a.imm << "] != b.imm [" << b.imm << "]" << std::endl;
+    if(a.is_imm != b.is_imm)
+        std::cout << "a.is_imm [" << a.is_imm << "] != b.is_imm [" << b.is_imm << "]" << std::endl;
+    if(a.is_label != b.is_label)
+        std::cout << "a.is_label [" << a.is_label << "] != b.is_label [" << b.is_label << "]" << std::endl;
+    if(a.is_directive != b.is_directive)
+        std::cout << "a.is_directive [" << a.is_directive << "] != b.is_directive [" << b.is_directive << "]" << std::endl;
+    if(a.error != b.error)
+        std::cout << "a.error [" << a.error << "] != b.error [" << b.error << "]" << std::endl;
+}
 /*
  * SOURCEINFO 
  */
