@@ -17,6 +17,44 @@
 #define LC3_ADR_SIZE 65535
 
 /*
+ * AsmLogEntry
+ * Logs status of a single line during the assembly process
+ */
+class AsmLogEntry
+{
+    public:
+        unsigned int line;
+        uint16_t     addr;
+        bool         error;
+        std::string  msg;
+
+    public:
+        AsmLogEntry();
+        ~AsmLogEntry();
+        AsmLogEntry(const AsmLogEntry& that);
+        void init(void);
+};
+
+/* 
+ * AsmLog
+ * Assembly log object
+ */
+class AsmLog
+{
+    private:
+        std::vector <AsmLogEntry> log;
+
+    public:
+        AsmLog();
+        ~AsmLog();
+        AsmLog(const AsmLog& that);
+        // insert
+        void add(const AsmLogEntry& e);
+        AsmLogEntry get(const unsigned int idx) const;
+        // TODO: format log string
+};
+
+/*
  * Asssembler
  *
  * Assembles an LC3 binary from a SourceInfo structure 
@@ -24,10 +62,12 @@
 class Assembler
 {
     private: 
-        bool verbose;
+        bool         verbose;
         unsigned int num_err;
 
     private:
+        AsmLog      log;
+        AsmLogEntry cur_log_entry;
         SourceInfo  src_info;
         Program     program;   // TODO: mem size later
         uint16_t    start_addr;

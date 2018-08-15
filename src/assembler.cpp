@@ -6,10 +6,65 @@
 
 #include <iostream>
 #include <iomanip>
+#include <cstdlib>
 #include "assembler.hpp"
 // TODO ; also need LC3 constants here ...
 #include "lc3.hpp"
 
+
+/*
+ * AsmLogEntry
+ * Logs status of a single line during the assembly process
+ */
+AsmLogEntry::AsmLogEntry()
+{
+    this->init();
+}
+
+AsmLogEntry::~AsmLogEntry() {} 
+
+AsmLogEntry::AsmLogEntry(const AsmLogEntry& that)
+{
+    this->line  = that.line;
+    this->addr  = that.addr;
+    this->error = that.error;
+    this->msg   = that.msg;
+}
+
+void AsmLogEntry::init(void)
+{
+    this->line  = 0;
+    this->addr  = 0;
+    this->error = false;
+    this->msg   = "\0";
+}
+
+/* 
+ * AsmLog
+ * Assembly log object
+ */
+AsmLog::AsmLog() {}
+AsmLog::~AsmLog() {} 
+AsmLog::AsmLog(const AsmLog& that)
+{
+    this->log = that.log;
+}
+
+void AsmLog::add(const AsmLogEntry& e)
+{
+    this->log.push_back(e);
+}
+
+AsmLogEntry AsmLog::get(const unsigned int idx) const
+{
+    return this->log[idx % this->log.size()];
+}
+
+/*
+ * Asssembler
+ *
+ * Assembles an LC3 binary from a SourceInfo structure 
+ */
 Assembler::Assembler(const SourceInfo& si)
 {
     this->src_info = si;
@@ -100,7 +155,12 @@ void Assembler::asm_and(const LineInfo& line)
     instr.ins = (instr.ins| this->asm_arg2(line.arg2));
     instr.ins = (instr.ins | this->asm_arg3(line.arg3));
     if(line.is_imm)
+    {
         instr.ins = (instr.ins | (1 << 5));
+        instr.ins = (instr.ins | this->asm_imm5(line.imm));
+    }
+    else
+        instr.ins = (instr.ins | this->asm_arg3(line.arg3));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -123,8 +183,14 @@ void Assembler::asm_br(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | (line.flags << 9));
-    // Figure out the offset 
     offset = line.imm - (line.addr + 1);
+    if(offset > 0 && std::abs(offset) > 255)
+    {
+        this->cur_log_entry.error = true;
+        this->cur_log_entry.addr = line.addr;
+        this->cur_log_entry.msg = "BR offset too large";
+        return;
+    }
     instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
@@ -204,8 +270,15 @@ void Assembler::asm_lea(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
+    std::cout << "[" << __FUNCTION__ << "] offset = " << offset << std::endl;
     offset = this->asm_pc9(line.imm) - (line.addr + 1);
-    //instr.ins = (instr.ins | this->asm_pc9(line.imm));
+    if(offset > 0 && std::abs(offset) > 255)
+    {
+        this->cur_log_entry.error = true;
+        this->cur_log_entry.addr  = line.addr;
+        this->cur_log_entry.msg   = "LEA offset too large";
+        return;
+    }
     instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
@@ -230,6 +303,13 @@ void Assembler::asm_ld(const LineInfo& line)
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
     offset = this->asm_pc9(line.imm) - (line.addr + 1);
+    if(offset > 0 && std::abs(offset) > 255)
+    {
+        this->cur_log_entry.error = true;
+        this->cur_log_entry.addr  = line.addr;
+        this->cur_log_entry.msg   = "LD offset too large";
+        return;
+    }
     instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
@@ -290,6 +370,7 @@ void Assembler::asm_not(const LineInfo& line)
 void Assembler::asm_st(const LineInfo& line)
 {
     Instr instr;
+    int16_t offset = 0;
 
     instr.ins = 0;
     if(this->verbose)
@@ -299,7 +380,15 @@ void Assembler::asm_st(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    instr.ins = (instr.ins | this->asm_pc9(line.imm));
+    offset = this->asm_pc9(line.imm) - (line.addr + 1);
+    if(offset > 0 && std::abs(offset) > 255)
+    {
+        this->cur_log_entry.error = true;
+        this->cur_log_entry.addr  = line.addr;
+        this->cur_log_entry.msg   = "ST offset too large";
+        return;
+    }
+    instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -322,7 +411,7 @@ void Assembler::asm_str(const LineInfo& line)
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
     instr.ins = (instr.ins | this->asm_arg2(line.arg2));
-    instr.ins = (instr.ins | this->asm_of6(line.imm));
+    instr.ins = (instr.ins | (this->asm_of6(line.imm) & 0x003F));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -345,7 +434,7 @@ void Assembler::asm_sti(const LineInfo& line)
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
     instr.ins = (instr.ins | this->asm_arg2(line.arg2));
-    instr.ins = (instr.ins | this->asm_of6(line.imm));
+    instr.ins = (instr.ins | (this->asm_of6(line.imm) & 0x003F));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -451,12 +540,19 @@ void Assembler::assemble(void)
     num_lines = this->src_info.getNumLines();
     for(idx = 0; idx < num_lines; idx++)
     {
+        // Init the log info for this line
+        this->cur_log_entry.init();
+        // Get the current line
         cur_line = this->src_info.get(idx);
+        this->cur_log_entry.line = cur_line.line_num;
         if(cur_line.error)
         {
             this->num_err++;
-            continue;
+            this->cur_log_entry.error = true;
+            this->cur_log_entry.msg = "Lexer error on line " + std::to_string(cur_line.line_num);
+            goto LINE_END;
         }
+
         // Handle directives 
         if(cur_line.is_directive)
         {
@@ -466,7 +562,7 @@ void Assembler::assemble(void)
                 this->dir_fill(cur_line);
             else if(cur_line.opcode.mnemonic == ".ORIG")
                 this->dir_orig(cur_line);
-            continue;
+            goto LINE_END;
         }
 
         // Handle opcodes 
@@ -500,6 +596,7 @@ void Assembler::assemble(void)
                 this->asm_trap(cur_line);
                 break;
             default:
+                // TODO : make this the error string
                 std::cout << "[" << __FUNCTION__ <<
                     "] (line " << cur_line.line_num << 
                     ") invalid opcode 0x" << std::hex << 
@@ -507,7 +604,16 @@ void Assembler::assemble(void)
                     cur_line.opcode.opcode << " with mnemonic " <<
                     std::uppercase << cur_line.opcode.mnemonic << 
                     std::endl;
+                this->cur_log_entry.error = true;
                 break;
+        }
+LINE_END:
+        this->log.add(this->cur_log_entry);
+        if(this->cur_log_entry.error)
+        {
+            std::cout << "[" << __FUNCTION__ << "] (line " << 
+                std::dec << cur_line.line_num << ") this is where error reporting will go" << std::endl;
+            return;
         }
     }
 }
