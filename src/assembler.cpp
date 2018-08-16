@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 #include <cstdlib>
 #include "assembler.hpp"
 // TODO ; also need LC3 constants here ...
@@ -39,6 +40,24 @@ void AsmLogEntry::init(void)
     this->msg   = "\0";
 }
 
+std::string AsmLogEntry::toString(void) const
+{
+    std::ostringstream oss;
+
+    oss << "Line   Addr   Status   Msg" << std::endl;
+    oss << std::dec << std::setw(4) << std::setfill(' ') << std::right << this->line;
+    oss << " 0x" << std::hex << std::setw(4) << std::setfill('0') << std::right << this->addr;
+    oss << "  ";
+    if(this->error)
+        oss << std::right << "[ERROR]";
+    else
+        oss << std::right << "[ OK  ]";
+    oss << "  <" << this->msg << ">";
+    oss << std::endl;
+
+    return oss.str();
+}
+
 /* 
  * AsmLog
  * Assembly log object
@@ -58,6 +77,22 @@ void AsmLog::add(const AsmLogEntry& e)
 AsmLogEntry AsmLog::get(const unsigned int idx) const
 {
     return this->log[idx % this->log.size()];
+}
+
+// Get a single entry as a string 
+std::string AsmLog::getString(const unsigned int idx) const
+{
+    return this->log[idx % this->log.size()].toString();
+}
+
+// Get the entire log as a string
+std::string AsmLog::getString(void) const
+{
+    std::ostringstream oss;
+    for(unsigned int idx = 0; idx < this->log.size(); ++idx)
+        oss << this->log[idx].toString();
+
+    return oss.str();
 }
 
 /*
@@ -545,6 +580,7 @@ void Assembler::assemble(void)
         // Get the current line
         cur_line = this->src_info.get(idx);
         this->cur_log_entry.line = cur_line.line_num;
+        this->cur_log_entry.addr = cur_line.addr;
         if(cur_line.error)
         {
             this->num_err++;
@@ -647,3 +683,14 @@ int Assembler::write(const std::string& filename)
 {
     return this->program.save(filename);
 }
+
+// Log handling functions
+std::string Assembler::getLog(void) const
+{
+    return this->log.getString();
+}
+
+//AsmLog Assembler::getLog(void) const
+//{
+//    return this->log;
+//}

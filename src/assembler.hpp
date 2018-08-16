@@ -33,6 +33,7 @@ class AsmLogEntry
         ~AsmLogEntry();
         AsmLogEntry(const AsmLogEntry& that);
         void init(void);
+        std::string toString(void) const;
 };
 
 /* 
@@ -51,7 +52,8 @@ class AsmLog
         // insert
         void add(const AsmLogEntry& e);
         AsmLogEntry get(const unsigned int idx) const;
-        // TODO: format log string
+        std::string getString(const unsigned int idx) const;
+        std::string getString(void) const;
 };
 
 /*
@@ -116,8 +118,12 @@ class Assembler
         
         void setVerbose(const bool v);
         bool getVerbose(void) const;
-
         int write(const std::string& filename);
+
+    public:
+        // Log access
+        std::string getLog(void) const;
+        //AsmLog      getLog(void) const;
 
 };
 

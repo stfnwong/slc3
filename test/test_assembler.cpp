@@ -160,7 +160,11 @@ TEST_F(TestAssembler, test_asm_add)
         ASSERT_EQ(ex_instructions[i].ins, as_instructions[i].ins);
         std::cout << std::endl;
     }
-    as_prog.save(this->asm_prog_outfile);
+    //as_prog.save(this->asm_prog_outfile);
+
+    // Dump the assembly log 
+    std::cout << "\t Assembly log:\n\n";
+    std::cout << as.getLog();
 }
 
 Program get_sentinel_expected_program(void)
@@ -244,6 +248,42 @@ TEST_F(TestAssembler, test_asm_sentinel)
         ASSERT_EQ(ex_instructions[i].ins, as_instructions[i].ins);
         std::cout << std::endl;
     }
+
+    // Dump the assembly log 
+    std::cout << "\t Assembly log:\n\n";
+    std::cout << as.getLog();
+}
+
+// Test string formatting
+TEST_F(TestAssembler, test_string_format)
+{
+    AsmLogEntry log_entry;
+    // with error 
+    log_entry.line  = 34;
+    log_entry.addr  = 0x3001;
+    log_entry.error = true;
+    log_entry.msg   = "Test message; incorrect symbol";
+
+    std::cout << "\tLog message with error" << std::endl;
+    std::cout << log_entry.toString();
+
+    // without error 
+    log_entry.line  = 35;
+    log_entry.addr  = 0x3002;
+    log_entry.error = false;
+    log_entry.msg   = "Test message: no error";
+
+    std::cout << "\tLog message without error" << std::endl;
+    std::cout << log_entry.toString();
+
+    // Without message
+    log_entry.line  = 35;
+    log_entry.addr  = 0x3003;
+    log_entry.error = false;
+    log_entry.msg   = "\0";
+    
+    std::cout << "\tWithout message field" << std::endl;
+    std::cout << log_entry.toString();
 }
 
 int main(int argc, char *argv[])
