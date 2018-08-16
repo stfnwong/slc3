@@ -471,16 +471,11 @@ void Lexer::parseOpcode(void)
             arg = std::string(this->token_buf);
             this->line_info.arg1 = std::stoi(arg.substr(1, arg.length()));
             // Next could be a symbol
+            this->scanToken();
             if(this->isNumber())
-            {
-                this->scanToken();
                 this->line_info.imm = std::stoi(std::string(this->token_buf));
-            }
             else
-            {
-                this->scanToken();
                 this->line_info.symbol = std::string(this->token_buf);
-            }
             break;
 
         case LC3_LDR:

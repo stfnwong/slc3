@@ -102,9 +102,10 @@ std::string AsmLog::getString(void) const
  */
 Assembler::Assembler(const SourceInfo& si)
 {
-    this->src_info = si;
-    this->num_err = 0;
-    this->verbose = false;
+    this->src_info      = si;
+    this->num_err       = 0;
+    this->verbose       = false;
+    this->cont_on_error = false;
 }
 
 Assembler::~Assembler() {}
@@ -219,11 +220,10 @@ void Assembler::asm_br(const LineInfo& line)
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | (line.flags << 9));
     offset = line.imm - (line.addr + 1);
-    if(offset > 0 && std::abs(offset) > 255)
+    if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
     {
         this->cur_log_entry.error = true;
-        this->cur_log_entry.addr = line.addr;
-        this->cur_log_entry.msg = "BR offset too large";
+        this->cur_log_entry.msg = "BR offset too large (" + std::to_string(offset) + ")";
         return;
     }
     instr.ins = (instr.ins | (offset & 0x01FF));
@@ -305,13 +305,12 @@ void Assembler::asm_lea(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    std::cout << "[" << __FUNCTION__ << "] offset = " << offset << std::endl;
-    offset = this->asm_pc9(line.imm) - (line.addr + 1);
-    if(offset > 0 && std::abs(offset) > 255)
+    offset    = line.imm - (line.addr + 1);
+    if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
     {
         this->cur_log_entry.error = true;
         this->cur_log_entry.addr  = line.addr;
-        this->cur_log_entry.msg   = "LEA offset too large";
+        this->cur_log_entry.msg   = "LEA offset too large (" + std::to_string(offset) + ")";
         return;
     }
     instr.ins = (instr.ins | (offset & 0x01FF));
@@ -337,12 +336,11 @@ void Assembler::asm_ld(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    offset = this->asm_pc9(line.imm) - (line.addr + 1);
-    if(offset > 0 && std::abs(offset) > 255)
+    offset = line.imm - (line.addr + 1);
+    if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
     {
         this->cur_log_entry.error = true;
-        this->cur_log_entry.addr  = line.addr;
-        this->cur_log_entry.msg   = "LD offset too large";
+        this->cur_log_entry.msg   = "LD offset too large (" + std::to_string(offset) + ")";
         return;
     }
     instr.ins = (instr.ins | (offset & 0x01FF));
@@ -358,6 +356,7 @@ void Assembler::asm_ld(const LineInfo& line)
 void Assembler::asm_ldr(const LineInfo& line)
 {
     Instr instr;
+    int16_t offset = 0;
 
     instr.ins = 0;
     if(this->verbose)
@@ -368,7 +367,14 @@ void Assembler::asm_ldr(const LineInfo& line)
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
     instr.ins = (instr.ins | this->asm_arg2(line.arg2)); 
-    instr.ins = (instr.ins | (this->asm_of6(line.imm) & 0x003F));
+    offset    = line.imm - (line.addr + 1);
+    if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
+    {
+        this->cur_log_entry.error = true;
+        this->cur_log_entry.msg   = "LDR offset too large (" + std::to_string(offset) + ")";
+        return;
+    }
+    instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
     this->program.add(instr);
@@ -415,8 +421,8 @@ void Assembler::asm_st(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    offset = this->asm_pc9(line.imm) - (line.addr + 1);
-    if(offset > 0 && std::abs(offset) > 255)
+    offset = line.imm - (line.addr + 1);
+    if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
     {
         this->cur_log_entry.error = true;
         this->cur_log_entry.addr  = line.addr;
@@ -538,7 +544,7 @@ void Assembler::dir_orig(const LineInfo& line)
         std::cout << "[" << __FUNCTION__ << "] (src line " <<
             std::dec << line.line_num << ") assembling .ORIG" << std::endl;
     }
-    this->start_addr = line.imm;
+    //this->start_addr = line.imm;
 }
 
 /*
@@ -632,24 +638,27 @@ void Assembler::assemble(void)
                 this->asm_trap(cur_line);
                 break;
             default:
-                // TODO : make this the error string
-                std::cout << "[" << __FUNCTION__ <<
-                    "] (line " << cur_line.line_num << 
-                    ") invalid opcode 0x" << std::hex << 
-                    std::setw(2) << std::setfill('0') <<
-                    cur_line.opcode.opcode << " with mnemonic " <<
-                    std::uppercase << cur_line.opcode.mnemonic << 
-                    std::endl;
+                std::ostringstream oss;
+                oss << "Invalid opcode 0x" << std::hex << std::setw(2)
+                    << cur_line.opcode.opcode << " (mnemonic " 
+                    << std::uppercase << cur_line.opcode.mnemonic << ")";
+                this->cur_log_entry.msg = oss.str();
                 this->cur_log_entry.error = true;
+                if(this->verbose)
+                {
+                    std::cout << "[" << __FUNCTION__ << "] " << 
+                        this->cur_log_entry.msg << std::endl;
+                }
                 break;
         }
 LINE_END:
         this->log.add(this->cur_log_entry);
         if(this->cur_log_entry.error)
         {
-            std::cout << "[" << __FUNCTION__ << "] (line " << 
-                std::dec << cur_line.line_num << ") this is where error reporting will go" << std::endl;
-            return;
+            this->num_err++;
+            std::cerr << this->cur_log_entry.msg << std::endl;
+            if(!this->cont_on_error)
+                return;
         }
     }
 }
@@ -677,6 +686,11 @@ void Assembler::setVerbose(const bool v)
 bool Assembler::getVerbose(void) const
 {
     return this->verbose;
+}
+
+void Assembler::setContOnError(const bool c)
+{
+    this->cont_on_error = c;
 }
 
 int Assembler::write(const std::string& filename)

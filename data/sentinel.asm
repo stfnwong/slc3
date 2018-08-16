@@ -4,7 +4,7 @@
 ; Stefan Wong 2018
 
     .ORIG x3000
-    LEA R1,FirstVal    ; load R1 with value in x3100
+    LEA R1,FirstVal    ; load R1 with value in FirstVal
     AND R3,R3,#0
     LDR R4,R1,#0
 TestEnd:   BRn Done ; figure out when to exit the loop

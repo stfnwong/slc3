@@ -15,6 +15,7 @@
 //TODO : This also needs to move to some machine specific 
 // place for generic (visitor) implementation
 #define LC3_ADR_SIZE 65535
+#define LC3_OFFSET_MAX 255
 
 /*
  * AsmLogEntry
@@ -65,6 +66,7 @@ class Assembler
 {
     private: 
         bool         verbose;
+        bool         cont_on_error;
         unsigned int num_err;
 
     private:
@@ -75,6 +77,7 @@ class Assembler
         uint16_t    start_addr;
 
     private:
+        // opcode part extractions
         inline uint16_t asm_arg1(const uint16_t arg);
         inline uint16_t asm_arg2(const uint16_t arg);
         inline uint16_t asm_arg3(const uint16_t arg);
@@ -118,6 +121,7 @@ class Assembler
         
         void setVerbose(const bool v);
         bool getVerbose(void) const;
+        void setContOnError(const bool c);
         int write(const std::string& filename);
 
     public:

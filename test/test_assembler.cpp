@@ -134,9 +134,16 @@ TEST_F(TestAssembler, test_asm_add)
     lex_output = lexer.lex();
     Assembler as(lex_output);
     as.setVerbose(true);
+    as.setContOnError(true);
 
     ASSERT_EQ(0, as.getNumErr());
     as.assemble();
+
+    // Dump the assembly log 
+    std::cout << "\t Assembly log:\n\n";
+    std::cout << as.getLog();
+    // This test should be error free
+    ASSERT_EQ(0, as.getNumErr());
 
     Program as_prog = as.getProgram();
     Program ex_prog = get_add_expected_program();
@@ -161,10 +168,6 @@ TEST_F(TestAssembler, test_asm_add)
         std::cout << std::endl;
     }
     //as_prog.save(this->asm_prog_outfile);
-
-    // Dump the assembly log 
-    std::cout << "\t Assembly log:\n\n";
-    std::cout << as.getLog();
 }
 
 Program get_sentinel_expected_program(void)
@@ -218,6 +221,7 @@ TEST_F(TestAssembler, test_asm_sentinel)
     lex_output = lexer.lex();
     Assembler as(lex_output);
     as.setVerbose(true);
+    as.setContOnError(true);
 
     ASSERT_EQ(0, as.getNumErr());
     as.assemble();
@@ -253,6 +257,66 @@ TEST_F(TestAssembler, test_asm_sentinel)
     std::cout << "\t Assembly log:\n\n";
     std::cout << as.getLog();
 }
+
+// ==== Offset error test 
+// Create a program that jumps to an offset which
+// is too large to fit inside the opcode
+SourceInfo get_offset_error_source(void)
+{
+    SourceInfo source;
+    LineInfo line;
+
+    // First line, load a value from a valid 
+    // (in range) offset
+    initLineInfo(line);
+    line.addr            = 0x3000;
+    line.line_num        = 1;
+    line.opcode.opcode   = LC3_LD;
+    line.opcode.mnemonic = "LD";
+    line.arg1            = 1;
+    line.imm             = 0x3050;
+    source.add(line);
+    // Line 2 , this one has an offset that 
+    // is much too large 
+    initLineInfo(line);
+    line.addr            = 0x3001;
+    line.line_num        = 2;
+    line.opcode.opcode   = LC3_LD;
+    line.opcode.mnemonic = "LD";
+    line.arg1            = 1;
+    line.imm             = 0xEF00;
+    source.add(line);
+    // Line 3, BR with large offset 
+    initLineInfo(line);
+    line.addr            = 0x3002;
+    line.line_num        = 3;
+    line.opcode.opcode   = LC3_BR;
+    line.opcode.mnemonic = "BR";
+    line.flags           = 0x1;  // p flag
+    line.imm             = 0xEF00;
+    source.add(line);
+
+    return source;
+}
+
+// Test error handling
+TEST_F(TestAssembler, test_error_handling)
+{
+    SourceInfo lex_output = get_offset_error_source();
+    Assembler as(lex_output);
+    as.setVerbose(true);
+    as.setContOnError(true);
+
+    ASSERT_EQ(0, as.getNumErr());
+    as.assemble();
+
+    // Dump the assembly log 
+    std::cout << "\t Assembly log:\n\n";
+    std::cout << as.getLog();
+    ASSERT_EQ(2, as.getNumErr());
+}
+
+// TODO : test JMP, JSR, JSRR instructions 
 
 // Test string formatting
 TEST_F(TestAssembler, test_string_format)
@@ -290,5 +354,4 @@ int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
-        //s
 }
