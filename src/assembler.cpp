@@ -218,14 +218,21 @@ void Assembler::asm_br(const LineInfo& line)
             << std::dec << line.line_num << ") assembling BR" << std::endl;
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
-    instr.ins = (instr.ins | (line.flags << 9));
-    offset = line.imm - (line.addr + 1);
+    offset = (line.imm == 0) ? 0 : line.imm - (line.addr + 1);
     if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
     {
         this->cur_log_entry.error = true;
         this->cur_log_entry.msg = "BR offset too large (" + std::to_string(offset) + ")";
         return;
     }
+    // flags 
+    if(line.flags & LC3_FLAG_N)
+        instr.ins = (instr.ins | 0x0800);
+    if(line.flags & LC3_FLAG_Z)
+        instr.ins = (instr.ins | 0x0400);
+    if(line.flags & LC3_FLAG_P)
+        instr.ins = (instr.ins | 0x0200);
+    // offset 
     instr.ins = (instr.ins | (offset & 0x01FF));
     instr.adr = line.addr;
 
@@ -367,7 +374,7 @@ void Assembler::asm_ldr(const LineInfo& line)
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
     instr.ins = (instr.ins | this->asm_arg2(line.arg2)); 
-    offset    = line.imm - (line.addr + 1);
+    offset    = (line.imm == 0) ? 0 : line.imm - (line.addr + 1);
     if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
     {
         this->cur_log_entry.error = true;
@@ -563,6 +570,13 @@ void Assembler::dir_stringz(const LineInfo& line)
     n = 0;
     for(addr = line.addr; addr < (line.addr + line.symbol.length()); ++addr)
     {
+        if(this->verbose)
+        {
+            std::cout << "[" << __FUNCTION__ << "] writing symbol " 
+                << std::setw(2) << line.symbol[n] 
+                << " to address 0x" << std::hex << std::setw(4) 
+                << std::setfill('0') << addr << std::endl;
+        }
         this->program.writeMem(addr, line.symbol[n]);
         n++;
     }
@@ -604,6 +618,8 @@ void Assembler::assemble(void)
                 this->dir_fill(cur_line);
             else if(cur_line.opcode.mnemonic == ".ORIG")
                 this->dir_orig(cur_line);
+            else if(cur_line.opcode.mnemonic == ".STRINGZ")
+                this->dir_stringz(cur_line);
             goto LINE_END;
         }
 

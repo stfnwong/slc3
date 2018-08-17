@@ -190,7 +190,7 @@ Program get_sentinel_expected_program(void)
     prog.add(instr);
     // Line 10 - TestEnd: BRn Done
     instr.adr = 0x3003;
-    instr.ins = 0x0804;
+    instr.ins = 0x0804;     // offset should be +4
     prog.add(instr);
     // Line 11 - ADD R3,R3,R4
     instr.adr = 0x3004;
@@ -217,7 +217,7 @@ TEST_F(TestAssembler, test_asm_sentinel)
     SourceInfo lex_output;
     std::string src_filename = "data/sentinel.asm";
     Lexer lexer(this->op_table, src_filename);
-    lexer.setVerbose(false);
+    lexer.setVerbose(true);
     lex_output = lexer.lex();
     Assembler as(lex_output);
     as.setVerbose(true);
@@ -240,14 +240,123 @@ TEST_F(TestAssembler, test_asm_sentinel)
         std::cout << "["  << std::dec << std::setw(4) << std::setfill(' ') << idx << "]";
         std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << as_instructions[idx].adr;
         std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << as_instructions[idx].ins;
-        //std::cout << "  " << std::bin << std::setw(16) << std::setfill('0') << as_instructions[idx].ins;
+        std::cout << std::endl;
+    }
+
+    // Expected instruction output 
+    std::cout << "\tExpected output for program " << src_filename << std::endl;
+    std::cout << " N     ADDR   DATA  <Binary>" << std::endl;
+    for(unsigned int idx = 0; idx < ex_instructions.size(); idx++)
+    {
+        std::cout << "["  << std::dec << std::setw(4) << std::setfill(' ') << idx << "]";
+        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << ex_instructions[idx].adr;
+        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << ex_instructions[idx].ins;
         std::cout << std::endl;
     }
 
     // Compare
     for(unsigned int i = 0; i < ex_instructions.size(); ++i)
     {
-        std::cout << "Comparing instruction " << i+1 << "...";
+        std::cout << "Comparing instruction " << i << "...";
+        ASSERT_EQ(ex_instructions[i].adr, as_instructions[i].adr);
+        ASSERT_EQ(ex_instructions[i].ins, as_instructions[i].ins);
+        std::cout << std::endl;
+    }
+
+    // Dump the assembly log 
+    std::cout << "\t Assembly log:\n\n";
+    std::cout << as.getLog();
+}
+
+// Test program for STRINGZ directive
+Program get_stringz_test_program(void)
+{
+    Program prog;
+    Instr instr;
+
+    // Line 5 - .ORIG x3000
+    instr.adr = 0x3010;
+    instr.ins = 0x0048;
+    prog.add(instr);
+    instr.adr = 0x3011;
+    instr.ins = 0x0065;
+    prog.add(instr);
+    instr.adr = 0x3012;
+    instr.ins = 0x006C;
+    prog.add(instr);
+    instr.adr = 0x3013;
+    instr.ins = 0x006C;
+    prog.add(instr);
+    instr.adr = 0x3014;
+    instr.ins = 0x006F;
+    prog.add(instr);
+    instr.adr = 0x3015;
+    instr.ins = 0x002C;
+    prog.add(instr);
+    instr.adr = 0x3016;
+    instr.ins = 0x0020;
+    prog.add(instr);
+    instr.adr = 0x3017;
+    instr.ins = 0x0057;
+    prog.add(instr);
+    instr.adr = 0x3018;
+    instr.ins = 0x006F;
+    prog.add(instr);
+    instr.adr = 0x3019;
+    instr.ins = 0x0072;
+    prog.add(instr);
+    instr.adr = 0x301A;
+    instr.ins = 0x006C;
+    prog.add(instr);
+    instr.adr = 0x301B;
+    instr.ins = 0x0064;
+    prog.add(instr);
+    instr.adr = 0x301C;
+    instr.ins = 0x0021;
+    prog.add(instr);
+    //instr.adr = 0x301D;
+    //instr.ins = 0x0000;   // TODO: is this a halt marker?
+    //prog.add(instr);
+
+    return prog;
+}
+
+// Test the assembly of the STRINGZ psuedo-op
+TEST_F(TestAssembler, test_asm_stringz)
+{
+    SourceInfo lex_output;
+    std::string src_filename = "data/stringz.asm";
+    Lexer lexer(this->op_table, src_filename);
+    lexer.setVerbose(false);
+    lex_output = lexer.lex();
+    Assembler as(lex_output);
+    as.setVerbose(true);
+    as.setContOnError(true);
+
+    ASSERT_EQ(0, as.getNumErr());
+    as.assemble();
+
+    // Assembled program
+    Program as_prog = as.getProgram();
+    Program ex_prog = get_stringz_test_program();
+    std::vector<Instr> as_instructions = as.getInstrs();
+    std::vector<Instr> ex_instructions = ex_prog.getInstr();
+
+    // Assembled instruction output 
+    std::cout << "\tAssembly output for program " << src_filename << std::endl;
+    std::cout << " N     ADDR   DATA  <Binary>" << std::endl;
+    for(unsigned int idx = 0; idx < as_instructions.size(); idx++)
+    {
+        std::cout << "["  << std::dec << std::setw(4) << std::setfill(' ') << idx+1 << "]";
+        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << as_instructions[idx].adr;
+        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << as_instructions[idx].ins;
+        std::cout << std::endl;
+    }
+
+    // Compare
+    for(unsigned int i = 0; i < ex_instructions.size(); ++i)
+    {
+        std::cout << "Comparing instruction " << std::dec << i+1 << "...";
         ASSERT_EQ(ex_instructions[i].adr, as_instructions[i].adr);
         ASSERT_EQ(ex_instructions[i].ins, as_instructions[i].ins);
         std::cout << std::endl;
@@ -317,6 +426,10 @@ TEST_F(TestAssembler, test_error_handling)
 }
 
 // TODO : test JMP, JSR, JSRR instructions 
+
+
+
+
 
 // Test string formatting
 TEST_F(TestAssembler, test_string_format)

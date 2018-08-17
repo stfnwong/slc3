@@ -203,16 +203,16 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
     oss << std::left << std::setw(12) << std::setfill(' ') << l.opcode.mnemonic;
     oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << l.opcode.opcode << "   ";
     // Insert flag chars
-    if(l.flags & LC3_FLAG_P)
-        oss << "p";
-    else
-        oss << ".";
     if(l.flags & LC3_FLAG_N)
         oss << "n";
     else
         oss << ".";
     if(l.flags & LC3_FLAG_Z)
         oss << "z";
+    else
+        oss << ".";
+    if(l.flags & LC3_FLAG_P)
+        oss << "p";
     else
         oss << ".";
     // Insert args

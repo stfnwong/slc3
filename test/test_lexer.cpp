@@ -399,6 +399,78 @@ TEST_F(TestLexer, test_lex_sentinel)
     }
 }
 
+SourceInfo get_stringz_test_source_info(void)
+{
+    SourceInfo info;
+    LineInfo line;
+
+    // Line 7 : .ORIG x3010
+    initLineInfo(line);
+    line.line_num        = 7;
+    line.addr            = 0x3010 - 1;
+    line.opcode.mnemonic = ".ORIG";
+    line.opcode.opcode   = 0;
+    line.imm             = 0x3010;
+    line.is_directive    = true;
+    info.add(line);
+    // Line 8 : .STRINGZ "Hello World!"
+    initLineInfo(line);
+    line.line_num        = 8;
+    line.addr            = 0x3010;
+    line.opcode.mnemonic = ".STRINGZ";
+    line.opcode.opcode   = 0;
+    line.symbol          = "Hello, World!";
+    line.label           = "HELLO";
+    line.is_label        = true;
+    line.is_directive    = true;
+    info.add(line);
+
+    return info;
+}
+
+// STRINGZ test 
+TEST_F(TestLexer, test_stringz)
+{
+    std::string asm_src_filename = "data/stringz.asm";
+    Lexer lexer(this->op_table, asm_src_filename);
+    lexer.setVerbose(true);
+    SourceInfo lsource = lexer.lex();
+
+    // Dump the source info
+    std::cout << "[" << __FUNCTION__ << "] Lexer created info for " << lsource.getNumLines() << " lines" << std::endl;
+    for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
+        lsource.printLine(idx);
+
+    // Dump the symbol table 
+    SymbolTable sym_table = lexer.dumpSymTable();
+    std::cout << "[" << __FUNCTION__ << "] Dumping symbol table" << std::endl;
+    for(unsigned int s = 0; s < sym_table.getNumSyms(); ++s)
+    {
+        Symbol sym = sym_table.get(s);
+        std::cout << std::left << std::setw(12) << std::setfill(' ') << 
+            sym.label << " : 0x" << std::hex << std::setfill('0') << sym.addr << std::endl;
+    }
+
+    SourceInfo expected_info = get_stringz_test_source_info();
+    ASSERT_EQ(false, expected_info.hasError());
+    std::cout << "[" << __FUNCTION__ << "] expected source info" << std::endl;
+    for(unsigned int idx = 0; idx < lsource.getNumLines(); idx++)
+        expected_info.printLine(idx);
+
+    // Compare expeceted output and lexer output
+    std::cout << "[" << __FUNCTION__ << "] checking source info" << std::endl;
+    for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)
+    {
+        LineInfo lex_line = lsource.get(idx);
+        LineInfo exp_line = expected_info.get(idx);
+        std::cout << "Checking line " << idx+1 << "(source line " << std::dec << lex_line.line_num << ") ...";
+        std::cout << "<" << lex_line.opcode.mnemonic << ">";
+        printLineDiff(lex_line, exp_line);
+        ASSERT_EQ(true, compLineInfo(lex_line, exp_line));
+        std::cout << " done" << std::endl;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);

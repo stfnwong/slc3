@@ -237,6 +237,36 @@ void Lexer::scanToken(void)
 }
 
 /*
+ * scanString()
+ * Scan a complete string. For use with STRINGZ psuedo-op
+ */
+void Lexer::scanString(void)
+{
+    unsigned int idx = 0;
+
+    // Find the first quote character
+    while(idx < (this->token_buf_size-1))
+    {
+        if(this->cur_char == '"')
+            break;
+        this->advance();
+        idx++;
+    }
+    idx = 0;
+    this->advance();        // move past the quote character
+    while(idx < (this->token_buf_size-1))
+    {
+        // Break on the last quote character
+        if(this->cur_char == '"')
+            break;
+        this->token_buf[idx] = this->cur_char;
+        this->advance();
+        idx++;
+    }
+    this->advance();  // ensure the quote char is not the current char 
+}
+
+/*
  * parseOpcode3Args()
  * Parse operands to an LC3 assembly language opcode
  */
@@ -356,6 +386,15 @@ void Lexer::parseOpcode(void)
                         this->line_info.flags |= LC3_FLAG_N;
                     if(this->line_info.opcode.mnemonic[f + 2] == 'z')
                         this->line_info.flags |= LC3_FLAG_Z;
+                }
+                if(this->verbose)
+                {
+                    if(this->line_info.flags & LC3_FLAG_N)
+                        std::cout << "Set N flag" << std::endl;
+                    if(this->line_info.flags & LC3_FLAG_Z)
+                        std::cout << "Set Z flag" << std::endl;
+                    if(this->line_info.flags & LC3_FLAG_P)
+                        std::cout << "Set P flag" << std::endl;
                 }
             }
             this->scanToken();
@@ -684,17 +723,22 @@ void Lexer::parseDirective(void)
     if(o.mnemonic == ".END")
         return;
 
-    // Remaining directives have arguments, figure those out here 
-    this->scanToken();
-    // Get the arg in numerical form from string
+    // Remaining directives except for STRINGZ have arguments, 
+    // figure those out here 
     uint16_t arg = 0;
-    std::string argstr = std::string(this->token_buf);
-    if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
-        arg = std::stoi(argstr.substr(1, argstr.length()), nullptr, 16);
-    else if(this->token_buf[0] == '#')
-        arg = std::stoi(argstr.substr(1, argstr.length()));
-    else
-        arg = std::stoi(argstr);
+    if(o.mnemonic != ".STRINGZ")
+    {
+        this->scanToken();
+        // Get the arg in numerical form from string
+        std::string argstr = std::string(this->token_buf);
+        if(this->token_buf[0] == 'x' || this->token_buf[0] == 'X')
+            arg = std::stoi(argstr.substr(1, argstr.length()), nullptr, 16);
+        else if(this->token_buf[0] == '#')
+            arg = std::stoi(argstr.substr(1, argstr.length()));
+        else
+            arg = std::stoi(argstr);
+    }
+
     switch(o.opcode)
     {
         case ASM_BLKW:
@@ -710,8 +754,11 @@ void Lexer::parseDirective(void)
             this->line_info.imm = arg;
             break;
         case ASM_STRINGZ:
-            std::cout << "[" << __FUNCTION__ << 
-                "] .STRINGZ not yet implemented" << std::endl;
+            this->scanString();
+            // debug 
+            std::cout << "[" << __FUNCTION__ << "] got STRINGZ token <" 
+                << std::string(this->token_buf) << ">" << std::endl;
+            this->line_info.symbol = std::string(this->token_buf);
             break;
         default:
             this->line_info.error = true;

@@ -81,6 +81,7 @@ class Lexer
     private:
         // Symbol parse
         void scanToken(void);
+        void scanString(void);
         void parseOpcode3Args(void);
         void parseOpcode(void);
         void parseTrapOpcode(void);
