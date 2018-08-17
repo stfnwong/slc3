@@ -343,7 +343,7 @@ void Assembler::asm_ld(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    offset = line.imm - (line.addr + 1);
+    offset = (line.imm == 0) ? 0 : line.imm - (line.addr + 1);
     if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
     {
         this->cur_log_entry.error = true;
@@ -428,7 +428,7 @@ void Assembler::asm_st(const LineInfo& line)
     }
     instr.ins = (instr.ins | (line.opcode.opcode << 12));
     instr.ins = (instr.ins | this->asm_arg1(line.arg1));
-    offset = line.imm - (line.addr + 1);
+    offset = (line.imm == 0) ? 0 : line.imm - (line.addr + 1);
     if(offset < -LC3_OFFSET_MAX || offset > LC3_OFFSET_MAX)
     {
         this->cur_log_entry.error = true;
