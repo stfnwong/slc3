@@ -4,10 +4,10 @@
 ; Stefan Wong 2018
 
     .ORIG x3000
-    LD R1, Val1
-    LD R2, Val2
-    ADD R3,R1,R2
-    HALT
-
+    LD R1,Val1      ; load data into registers 
+    LD R2,Val2      
+    ADD R3,R1,R2    ; peform add
+    HALT 
 Val1: .FILL #1
 Val2: .FILL #2
+.END

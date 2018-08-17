@@ -77,6 +77,7 @@ void initLineInfo(LineInfo& l)
     l.addr     = 0;
     l.symbol   = "\0";
     l.label    = "\0";
+    l.errstr   = "\0";
     l.opcode   = {0x0, "DEFAULT"},
     l.arg1     = 0;
     l.arg2     = 0;
@@ -89,42 +90,86 @@ void initLineInfo(LineInfo& l)
     l.is_directive = false;
 }
 
-void printLineInfo(const LineInfo& l)
+/*
+ * compLineInfo()
+ * Compare two LineInfo objects. errstr isn't checked here 
+ */
+bool compLineInfo(const LineInfo& a, const LineInfo& b)
 {
-    std::ostringstream oss;
-       
-    oss << "==========================================" << std::endl;
-    oss << "line      : " << std::dec << l.line_num << std::endl;
-    oss << "addr      : 0x" << std::hex << l.addr     << std::endl;
-    oss << "symbol    : " << l.symbol   << std::endl;
-    oss << "label     : " << l.label    << std::endl;
-    oss << "opcode    : " << std::hex << std::setw(4) << std::setfill('0') << l.opcode.opcode << std::endl;
-    //oss << "flags     : " << std::hex << std::setw(2) << l.flags << std::endl;
-    oss << "flags     : ";
-    if(l.flags & LC3_FLAG_P)
-        oss << "p";
-    if(l.flags & LC3_FLAG_N)
-        oss << "n";
-    if(l.flags & LC3_FLAG_Z)
-        oss << "z";
-    oss << std::endl;
-    oss << "mnemonic  : " << l.opcode.mnemonic << std::endl;
-    oss << "arg1      : " << std::hex << std::setw(4) << std::setfill('0') << l.arg1 << std::endl;
-    oss << "arg2      : " << std::hex << std::setw(4) << std::setfill('0') << l.arg2 << std::endl;
-    oss << "arg3      : " << std::hex << std::setw(4) << std::setfill('0') << l.arg3 << std::endl;
-    oss << "imm val   : " << std::hex << std::setw(4) << std::setfill('0') << l.imm  << std::endl;
-    oss << "imm       : " << l.is_imm << std::endl;
-    oss << "label     : " << l.is_label << std::endl;
-    oss << "directive : " << l.is_directive << std::endl;
-    oss << "error     : " << l.error << std::endl;
+    if(a.symbol != b.symbol)
+        return false;
+    if(a.label != b.label)
+        return false;
+    if(a.opcode.opcode != b.opcode.opcode)
+        return false;
+    if(a.opcode.mnemonic != b.opcode.mnemonic)
+        return false;
+    if(a.line_num != b.line_num)
+        return false;
+    if(a.addr != b.addr)
+        return false;
+    if(a.flags != b.flags)
+        return false;
+    if(a.arg1 != b.arg1)
+        return false;
+    if(a.arg2 != b.arg2)
+        return false;
+    if(a.arg3 != b.arg3)
+        return false;
+    if(a.imm != b.imm)
+        return false;
+    if(a.is_imm != b.is_imm)
+        return false;
+    if(a.is_label != b.is_label)
+        return false;
+    if(a.is_directive != b.is_directive)
+        return false;
+    if(a.error != b.error)
+        return false;
 
-    std::cout << oss.str();
+    return true;
 }
 
+void printLineDiff(const LineInfo& a, const LineInfo& b)
+{
+    if(a.symbol != b.symbol)
+        std::cout << "a.symbol [" << a.symbol << "] != b.symbol [" << b.symbol << "]" << std::endl;
+    if(a.label != b.label)
+        std::cout << "a.label [" << a.label << "] != b.label [" << b.label << "]" << std::endl;
+    if(a.opcode.opcode != b.opcode.opcode)
+        std::cout << "a.opcode [" << a.opcode.opcode << "] != b.opcode [" << b.opcode.opcode << "]" << std::endl;
+    if(a.opcode.mnemonic != b.opcode.mnemonic)
+        std::cout << "a.mnemonic [" << a.opcode.mnemonic << "] != b.mnemonic [" << b.opcode.mnemonic << "]" << std::endl;
+    if(a.line_num != b.line_num)
+        std::cout << "a.line_num [" << a.line_num << "] != b.line_num [" << b.line_num << "]" << std::endl;
+    if(a.addr != b.addr)
+        std::cout << "a.addr [" << a.addr << "] != b.addr [" << b.addr << "]" << std::endl;
+    if(a.flags != b.flags)
+        std::cout << "a.flags [" << a.flags << "] != b.flags [" << b.flags << "]" << std::endl;
+    if(a.arg1 != b.arg1)
+        std::cout << "a.arg1 [" << a.arg1 << "] != b.arg1 [" << b.arg1 << "]" << std::endl;
+    if(a.arg2 != b.arg2)
+        std::cout << "a.arg2 [" << a.arg2 << "] != b.arg2 [" << b.arg2 << "]" << std::endl;
+    if(a.arg3 != b.arg3)
+        std::cout << "a.arg3 [" << a.arg3 << "] != b.arg3 [" << b.arg3 << "]" << std::endl;
+    if(a.imm != b.imm)
+        std::cout << "a.imm [" << a.imm << "] != b.imm [" << b.imm << "]" << std::endl;
+    if(a.is_imm != b.is_imm)
+        std::cout << "a.is_imm [" << a.is_imm << "] != b.is_imm [" << b.is_imm << "]" << std::endl;
+    if(a.is_label != b.is_label)
+        std::cout << "a.is_label [" << a.is_label << "] != b.is_label [" << b.is_label << "]" << std::endl;
+    if(a.is_directive != b.is_directive)
+        std::cout << "a.is_directive [" << a.is_directive << "] != b.is_directive [" << b.is_directive << "]" << std::endl;
+    if(a.error != b.error)
+        std::cout << "a.error [" << a.error << "] != b.error [" << b.error << "]" << std::endl;
+}
 /*
  * SOURCEINFO 
  */
-SourceInfo::SourceInfo() {} 
+SourceInfo::SourceInfo()
+{
+    this->error = false;
+}
 
 SourceInfo::~SourceInfo() {} 
 
@@ -158,10 +203,6 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
     oss << std::left << std::setw(12) << std::setfill(' ') << l.opcode.mnemonic;
     oss << "0x" << std::hex << std::setw(4) << std::setfill('0') << l.opcode.opcode << "   ";
     // Insert flag chars
-    if(l.flags & LC3_FLAG_P)
-        oss << "p";
-    else
-        oss << ".";
     if(l.flags & LC3_FLAG_N)
         oss << "n";
     else
@@ -170,17 +211,21 @@ std::string SourceInfo::line_to_string(const LineInfo& l)
         oss << "z";
     else
         oss << ".";
+    if(l.flags & LC3_FLAG_P)
+        oss << "p";
+    else
+        oss << ".";
     // Insert args
     oss << "  ";
-    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg1;
-    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg2;
-    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.arg3;
-    oss << " $" << std::left << std::hex << std::setw(4) << std::setfill('0') << l.imm;
+    oss << " $" << std::right << std::hex << std::setw(4) << std::setfill('0') << l.arg1;
+    oss << " $" << std::right << std::hex << std::setw(4) << std::setfill('0') << l.arg2;
+    oss << " $" << std::right << std::hex << std::setw(4) << std::setfill('0') << l.arg3;
+    oss << " $" << std::right << std::hex << std::setw(4) << std::setfill('0') << l.imm;
 
     // (Next line) Text 
     oss << std::endl;
-    oss << "Label [" << std::setw(16) << std::setfill(' ') << l.label << "] ";
-    oss << "Symbol[" << std::setw(16) << std::setfill(' ') << l.symbol << "] ";
+    oss << "Label [" << std::left << std::setw(16) << std::setfill(' ') << l.label << "] ";
+    oss << "Symbol[" << std::left << std::setw(16) << std::setfill(' ') << l.symbol << "] ";
 
     oss << std::endl;
     
@@ -265,7 +310,7 @@ unsigned int SourceInfo::numInstance(const std::string& m) const
 {
     unsigned int n = 0;
     unsigned int idx;
-
+    // Could replace linear search here later...
     for(idx = 0; idx < this->line_info.size(); idx++)
     {
         if(this->line_info[idx].opcode.mnemonic == m)
@@ -273,6 +318,16 @@ unsigned int SourceInfo::numInstance(const std::string& m) const
     }
 
     return n;
+}
+
+bool SourceInfo::hasError(void) const
+{
+    return this->error;
+}
+
+void SourceInfo::setError(const bool e) 
+{
+    this->error = e;
 }
 
 // Save/load data 

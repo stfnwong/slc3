@@ -34,12 +34,12 @@ class Disassembler
 
     private:
         // instruction disassembly
+        inline uint8_t  dis_opcode(const uint16_t instr) const;
         inline bool     is_imm(const uint16_t instr) const;
         inline uint8_t  dis_op1(const uint16_t instr) const;
         inline uint8_t  dis_op2(const uint16_t instr) const;
         inline uint8_t  dis_op3(const uint16_t instr) const;
         inline uint8_t  dis_flags(const uint16_t instr) const;
-        inline uint8_t  dis_opcode(const uint16_t instr) const;
         inline uint8_t  dis_of6(const uint16_t instr) const;
         inline uint16_t dis_pc9(const uint16_t instr) const;
         inline uint16_t dis_pc11(const uint16_t instr) const;
