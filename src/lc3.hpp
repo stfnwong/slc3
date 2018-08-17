@@ -20,6 +20,10 @@
 #define LC3_BRP     0x00   // branch with P flag
 #define LC3_BRZ     0x00   // branch with Z flag
 #define LC3_BRN     0x00   // branch with N flag
+#define LC3_BRNP    0x00   // branch with N+P flag
+#define LC3_BRNZ    0x00   // branch with N+Zflag
+#define LC3_BRZP    0x00   // branch with Z+P flag
+#define LC3_BRNZP   0x00   // branch with N+Z+P flag
 #define LC3_JSR     0x04
 #define LC3_LD      0x02
 #define LC3_LDI     0x0A
@@ -90,6 +94,10 @@ const Opcode lc3_op_list[] = {
     // BR and variants 
     {LC3_BR,      "BR"},
     {LC3_BRP,     "BRp"},
+    {LC3_BRZ,     "BRz"},
+    {LC3_BRZP,    "BRzp"},
+    {LC3_BRNZ,    "BRnz"},
+    {LC3_BRNZP,   "BRnzp"},
     {LC3_BRN,     "BRn"},
     // Trap vector 
     {LC3_TRAP,    "TRAP"}
