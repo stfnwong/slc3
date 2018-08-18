@@ -47,6 +47,10 @@ inline uint8_t Disassembler::dis_flags(const uint16_t instr) const
 {
     return (instr & 0x0E00) >> 8;
 }
+inline uint8_t Disassembler::dis_imm5(const uint16_t instr) const
+{
+    return (instr & 0x001F);
+}
 inline uint8_t Disassembler::dis_of6(const uint16_t instr) const
 {
     return (instr & 0x003F);
@@ -82,7 +86,12 @@ int Disassembler::disInstr(const Instr& instr)
     }
 
     o.opcode = this->dis_opcode(instr.ins);
-    //o.mnemonic = this->lc3_op_table.getMnemonic(o.opcode);
+    o.mnemonic = this->lc3_op_table.getMnemonic(o.opcode);
+    if(o.mnemonic == "OP_UNKNOWN")
+    {
+        std::cerr << "[" << __FUNCTION__ << "] cannot find mnemonic for opcode <0x" 
+            << o.opcode << ">" << std::endl;
+    }
     this->cur_line.opcode = o;
     this->cur_line.addr   = instr.adr;
     switch(o.opcode)
@@ -93,7 +102,7 @@ int Disassembler::disInstr(const Instr& instr)
             this->cur_line.arg2 = this->dis_op2(instr.ins);
             this->cur_line.is_imm  = this->is_imm(instr.ins);
             if(this->cur_line.is_imm)
-                this->cur_line.imm = this->dis_op3(instr.ins);
+                this->cur_line.imm = this->dis_imm5(instr.ins);
             else
                 this->cur_line.arg3 = this->dis_op3(instr.ins);
 
@@ -105,7 +114,7 @@ int Disassembler::disInstr(const Instr& instr)
             this->cur_line.arg2 = this->dis_op2(instr.ins);
             this->cur_line.is_imm  = this->is_imm(instr.ins);
             if(this->cur_line.is_imm)
-                this->cur_line.imm = this->dis_op3(instr.ins);
+                this->cur_line.imm = this->dis_imm5(instr.ins);
             else
                 this->cur_line.arg3 = this->dis_op3(instr.ins);
 
@@ -176,13 +185,13 @@ void Disassembler::disassemble(void)
     }
 
     // Walk through the instructions and disassemble
+    this->line_ptr = 1;
     initLineInfo(this->cur_line);
     Instr instr;
     int status;
     for(i = 0; i < this->program.getNumInstr(); ++i)
     {
-        instr = this->program.getInstr(i);
-        // TODO : look up mnemonic
+        instr  = this->program.getInstr(i);
         status = this->disInstr(instr);
         if(status < 0)
         {
@@ -191,7 +200,9 @@ void Disassembler::disassemble(void)
                 std::dec << i+1 << "/" << 
                 std::dec << this->program.getNumInstr() << std::endl;
         }
+        this->cur_line.line_num = this->line_ptr;
         this->source.add(this->cur_line);
+        this->line_ptr++;
     }
 }
 

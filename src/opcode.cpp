@@ -72,7 +72,7 @@ std::string OpcodeTable::getMnemonic(const uint16_t opcode) const
             return this->op_list[idx].mnemonic;
     }
 
-    return "OP_INVAILD";
+    return "OP_UNKNOWN";
 }
 
 void OpcodeTable::getIdx(const unsigned int idx, Opcode& o) const

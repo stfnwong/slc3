@@ -23,10 +23,11 @@
 class Disassembler
 {
     private:
-        bool       verbose;
-        Program    program;
-        SourceInfo source;
-        LineInfo   cur_line;
+        bool         verbose;
+        Program      program;
+        SourceInfo   source;
+        LineInfo     cur_line;
+        unsigned int line_ptr;
 
     private:
         // Tables for mnemonic lookup
@@ -40,6 +41,7 @@ class Disassembler
         inline uint8_t  dis_op2(const uint16_t instr) const;
         inline uint8_t  dis_op3(const uint16_t instr) const;
         inline uint8_t  dis_flags(const uint16_t instr) const;
+        inline uint8_t  dis_imm5(const uint16_t instr) const;
         inline uint8_t  dis_of6(const uint16_t instr) const;
         inline uint16_t dis_pc9(const uint16_t instr) const;
         inline uint16_t dis_pc11(const uint16_t instr) const;

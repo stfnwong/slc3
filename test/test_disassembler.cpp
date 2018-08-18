@@ -121,6 +121,175 @@ TEST_F(TestDisassembler, test_dis_file)
         dsource.printLine(idx);
 }
 
+// Expected disassembly for sentinel program
+SourceInfo get_sentinel_test_source_info(void)
+{
+    SourceInfo info;
+    LineInfo line;
+
+    // Line 6 (.ORIG x3000)
+    initLineInfo(line);
+    line.line_num        = 6;
+    line.addr            = 0x3000-1;
+    line.opcode.mnemonic = ".ORIG";
+    line.opcode.opcode   = 0;
+    line.imm             = 0x3000;
+    line.is_directive    = true;
+    info.add(line);
+    // Line 7 (LD, R1, Val1)
+    initLineInfo(line);
+    line.line_num        = 7;
+    line.addr            = 0x3000;
+    line.opcode.mnemonic = "LEA";
+    line.opcode.opcode   = 0xE;
+    line.arg1            = 0x01;
+    line.imm             = 0x3009;
+    line.symbol          = "FirstVal";
+    info.add(line);
+    // Line 8 (AND R3,R3,#0)
+    initLineInfo(line);
+    line.line_num        = 8;
+    line.addr            = 0x3001;
+    line.opcode.mnemonic = "AND";
+    line.opcode.opcode   = 0x05;
+    line.arg1            = 3;
+    line.arg2            = 3;
+    line.imm             = 0;
+    line.is_imm          = true;
+    info.add(line);
+    // Line 9 (LDR R4,R1,#0)
+    initLineInfo(line);
+    line.line_num        = 9;
+    line.addr            = 0x3002;
+    line.opcode.mnemonic = "LDR";
+    line.opcode.opcode   = 0x06;
+    line.arg1            = 4;
+    line.arg2            = 1;
+    line.imm             = 0;
+    line.is_imm          = true;
+    info.add(line);
+    // Line 10 (TestEnd)
+    initLineInfo(line);
+    line.line_num        = 10;
+    line.addr            = 0x3003;
+    line.opcode.mnemonic = "BRn";
+    line.flags           = 0x4;     // negative flag
+    line.opcode.opcode   = 0x0;
+    line.symbol          = "Done";
+    line.label           = "TestEnd";
+    line.is_label        = true;
+    line.imm             = 0x3008;  // addr of 'Done'
+    info.add(line);
+    // Line 11 (ADD R3,R3,R4)
+    initLineInfo(line);
+    line.line_num        = 11;
+    line.addr            = 0x3004;
+    line.opcode.mnemonic = "ADD";
+    line.opcode.opcode   = 0x01;
+    line.arg1            = 3;
+    line.arg2            = 3;
+    line.arg3            = 4;
+    info.add(line);
+    // Line 12 (ADD, R1, R1, #1)
+    initLineInfo(line);
+    line.line_num        = 12;
+    line.addr            = 0x3005;
+    line.opcode.mnemonic = "ADD";
+    line.opcode.opcode   = 0x01;
+    line.arg1            = 1;
+    line.arg2            = 1;
+    line.imm             = 1;
+    line.is_imm          = true;
+    info.add(line);
+    // Line 13 (LDR, R4, R1, #0)
+    initLineInfo(line);
+    line.line_num        = 13;
+    line.addr            = 0x3006;
+    line.opcode.mnemonic = "LDR";
+    line.opcode.opcode   = 0x06;
+    line.arg1            = 4;
+    line.arg2            = 1;
+    line.imm             = 0;
+    line.is_imm          = true;
+    info.add(line);
+    // Line 14 (BRnzp TestEnd)
+    initLineInfo(line);
+    line.line_num        = 14;
+    line.addr            = 0x3007;
+    line.opcode.mnemonic = "BRnzp";
+    line.flags           = 0x7;     // all flags
+    line.opcode.opcode   = 0x0;
+    line.symbol          = "TestEnd";
+    line.imm             = 0x3003;
+    info.add(line);
+    // Line 16 (Done: Halt)
+    initLineInfo(line);
+    line.line_num        = 16;
+    line.addr            = 0x3008;
+    line.opcode.mnemonic = "TRAP";
+    line.opcode.opcode   = 0xF;
+    line.imm             = 0x25;
+    line.label           = "Done";
+    line.is_label        = true;
+    info.add(line);
+    // Line 17 (FirstVal: .FILL #64)
+    initLineInfo(line);
+    line.line_num        = 17;
+    line.addr            = 0x3009;
+    line.opcode.mnemonic = ".FILL";
+    line.opcode.opcode   = 0x0;
+    line.imm             = 64;
+    line.label           = "FirstVal";
+    line.is_label        = true;
+    line.is_directive    = true;
+    info.add(line);
+
+    return info;
+}
+
+// Expected assembly for sentinel program
+Program get_sentinel_expected_program(void)
+{
+    Program prog;
+    Instr instr;
+
+    // Line 5 - .ORIG x3000
+    // Line 7 - LEA R1, FirstVal
+    instr.adr = 0x3000;
+    instr.ins = 0xE208;
+    prog.add(instr);
+    // Line 8 - AND R3,R3,#0
+    instr.adr = 0x3001;
+    instr.ins = 0x56E0;
+    prog.add(instr);
+    // Line 9 - LDR R4,R1,#0
+    instr.adr = 0x3002;
+    instr.ins = 0x6840;
+    prog.add(instr);
+    // Line 10 - TestEnd: BRn Done
+    instr.adr = 0x3003;
+    instr.ins = 0x0804;     // offset should be +4
+    prog.add(instr);
+    // Line 11 - ADD R3,R3,R4
+    instr.adr = 0x3004;
+    instr.ins = 0x16C4;
+    prog.add(instr);
+    // Line 12 - ADD R1,R1,#1
+    instr.adr = 0x3005;
+    instr.ins = 0x1261;
+    prog.add(instr);
+    // Line 13 - LDR R4,R1,#0
+    instr.adr = 0x3006;
+    instr.ins = 0x6840;
+    prog.add(instr);
+    // Line 14 - BRnzp TestEnd
+    instr.adr = 0x3007;
+    instr.ins = 0x0FFB; // offset should be -5
+    prog.add(instr);
+
+    return prog;
+}
+
 TEST_F(TestDisassembler, test_dis_sentinel)
 {
     int status;
@@ -133,6 +302,7 @@ TEST_F(TestDisassembler, test_dis_sentinel)
     lex_output = lexer.lex();
     Assembler as(lex_output);
     as.setVerbose(false);
+    std::cout << "\t Assembling program in file " << src_filename << std::endl;
     as.assemble();
 
     // Write binary to disk
@@ -149,6 +319,31 @@ TEST_F(TestDisassembler, test_dis_sentinel)
     ASSERT_EQ(0, status);
     std::cout << "Disassembling file [" << out_filename << "]" << std::endl;
     dis.disassemble();
+
+    // Show the expected disassembly
+    SourceInfo expected_info = get_sentinel_test_source_info();
+    std::cout << "\t Expected disassembly for file " << src_filename << std::endl;
+    for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)
+        expected_info.printLine(idx);
+
+    // Get this disassembly output and compare
+    std::cout << "\t Output disassembly for file " << src_filename << std::endl;
+    SourceInfo dis_source = dis.getSourceInfo();
+    for(unsigned int idx = 0; idx < dis_source.getNumLines(); ++idx)
+        dis_source.printLine(idx);
+
+    // Compare 
+    std::cout << "Checking disassembly output... " << std::endl;
+    for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)
+    {
+        LineInfo dis_line = dis_source.get(idx);
+        LineInfo exp_line = expected_info.get(idx);
+        std::cout << "Checking line " << idx << "(source line " << std::dec << dis_line.line_num << ") ...";
+        std::cout << "<" << dis_line.opcode.mnemonic << ">";
+        printLineDiff(dis_line, exp_line);
+        ASSERT_EQ(true, compLineInfo(dis_line, exp_line));
+        std::cout << " done" << std::endl;
+    }
 }
 
 int main(int argc, char *argv[])
