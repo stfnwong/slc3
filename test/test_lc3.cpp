@@ -28,43 +28,70 @@ class TestLC3 : public ::testing::Test
         std::string mem_filename = "data/mem_test.dat";
 };
 
-
-// Test the simple add program 
-TEST_F(TestLC3, test_simple_add)
+TEST_F(TestLC3, test_sentinel)
 {
-    std::string add_filename = "data/add_test.asm";
+    std::string src_filename = "data/sentinel.asm";
+    // Get a new machine
     LC3 machine;
     machine.setVerbose(false);
 
-    Lexer lexer(machine.getOpTable(), add_filename);
+    Lexer lexer(machine.getOpTable(), src_filename);
     lexer.setVerbose(false);
+    std::cout << "\t Lexing file " << src_filename << std::endl;
     SourceInfo src_info = lexer.lex();
     Assembler as(src_info);
     as.setVerbose(false);
+    std::cout << "\t Assembling file " << src_filename << std::endl;
     as.assemble();
+
+    // Dump the program output 
+    Program asm_output = as.getProgram();
+    std::cout << "\t Assembly output for file " << src_filename << std::endl;
+    asm_output.print();
+    std::cout << std::endl;
     
     // Load the program into the machine
-    machine.loadMemProgram(as.getProgram());
-    unsigned int cur_cycle = 0;
-    unsigned int max_cycles = 25;
-    int machine_status;
+    machine.loadMemProgram(asm_output);
 
-    while(cur_cycle < max_cycles)
-    {
-        machine_status = machine.runCycle();
-        if(machine_status < 0)
-            std::cerr << "Got error " << machine_status << " from LC3" << std::endl;
-        if(machine_status == 0)
-        {
-            std::cout << "Machine execution finished at cycle " << cur_cycle << std::endl;
-            break;
-        }
-        std::cout << "cycle <" << cur_cycle << ">" << std::endl;
-        cur_cycle++;
-    }
-    if(cur_cycle >= max_cycles-1)
-        std::cout << "Machine ran to max_cycles (" << max_cycles << ")" << std::endl;
 }
+
+
+// Test the simple add program 
+//TEST_F(TestLC3, test_simple_add)
+//{
+//    std::string add_filename = "data/add_test.asm";
+//    LC3 machine;
+//    machine.setVerbose(false);
+//
+//    Lexer lexer(machine.getOpTable(), add_filename);
+//    lexer.setVerbose(false);
+//    SourceInfo src_info = lexer.lex();
+//    Assembler as(src_info);
+//    as.setVerbose(false);
+//    as.assemble();
+//    
+//    // Load the program into the machine
+//    machine.loadMemProgram(as.getProgram());
+//    unsigned int cur_cycle = 0;
+//    unsigned int max_cycles = 25;
+//    int machine_status;
+//
+//    while(cur_cycle < max_cycles)
+//    {
+//        machine_status = machine.runCycle();
+//        if(machine_status < 0)
+//            std::cerr << "Got error " << machine_status << " from LC3" << std::endl;
+//        if(machine_status == 0)
+//        {
+//            std::cout << "Machine execution finished at cycle " << cur_cycle << std::endl;
+//            break;
+//        }
+//        std::cout << "cycle <" << cur_cycle << ">" << std::endl;
+//        cur_cycle++;
+//    }
+//    if(cur_cycle >= max_cycles-1)
+//        std::cout << "Machine ran to max_cycles (" << max_cycles << ")" << std::endl;
+//}
 
 int main(int argc, char *argv[])
 {

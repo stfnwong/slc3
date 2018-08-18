@@ -28,6 +28,9 @@ class Program
         bool verbose;
         std::vector<Instr> instructions;
 
+    private:
+        std::string instr_to_string(const Instr& i);
+
     public:
         Program();
         ~Program();
@@ -48,6 +51,7 @@ class Program
         // Console output
         void               setVerbose(const bool v);
         bool               getVerbose(void) const;
+        void               print(void);
 };
 
 #endif /*__BINARY_HPP*/
