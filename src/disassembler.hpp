@@ -45,12 +45,8 @@ class Disassembler
         inline uint8_t  dis_of6(const uint16_t instr) const;
         inline uint16_t dis_pc9(const uint16_t instr) const;
         inline uint16_t dis_pc11(const uint16_t instr) const;
+        inline uint8_t  dis_trap8(const uint16_t instr) const;
         int             disInstr(const Instr& instr);
-
-    private:
-        // TODO: mnemonic lookup. It makes more sense to have 
-        // the machine model in to provide an OpTable with the 
-        // correct opcode->mnemonic maps 
 
     public:
         Disassembler();

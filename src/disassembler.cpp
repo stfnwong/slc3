@@ -63,6 +63,10 @@ inline uint16_t Disassembler::dis_pc11(const uint16_t instr) const
 {
     return (instr & 0x0EFF);
 }
+inline uint8_t Disassembler::dis_trap8(const uint16_t instr) const
+{
+    return (instr & 0x00FF);
+}
 
 // File load 
 int Disassembler::read(const std::string& filename)
@@ -117,27 +121,23 @@ int Disassembler::disInstr(const Instr& instr)
                 this->cur_line.imm = this->dis_imm5(instr.ins);
             else
                 this->cur_line.arg3 = this->dis_op3(instr.ins);
-
-            break;
-
-        case LC3_JSR:
-            this->cur_line.opcode.mnemonic = "JSR";
-            this->cur_line.imm = this->dis_pc11(instr.ins);
-
             break;
 
         case LC3_BR:
             this->cur_line.opcode.mnemonic = "BR";
             this->cur_line.flags = this->dis_flags(instr.ins);
             this->cur_line.imm   = this->dis_pc9(instr.ins);
+            break;
 
+        case LC3_JSR:
+            this->cur_line.opcode.mnemonic = "JSR";
+            this->cur_line.imm = this->dis_pc11(instr.ins);
             break;
 
         case LC3_LEA:
             this->cur_line.opcode.mnemonic = "LEA";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
             this->cur_line.imm  = this->dis_pc9(instr.ins);
-
             break;
 
         case LC3_LD:
@@ -158,11 +158,15 @@ int Disassembler::disInstr(const Instr& instr)
         case LC3_STR:
             this->cur_line.opcode.mnemonic = "STR";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
+            break;
 
+        case LC3_TRAP:
+            this->cur_line.imm = this->dis_trap8(instr.ins);
             break;
 
         default:
-            std::cout << "[" << __FUNCTION__ << "] invalid opcode $" <<
+            std::cout << "[" << __FUNCTION__ << "] (line " << 
+                std::dec << this->cur_line.line_num << ") invalid opcode $" <<
                 std::uppercase << std::hex << std::setw(2) << 
                 std::setfill('0') << o.opcode 
                 << " at 0x" << instr.adr << std::endl;
