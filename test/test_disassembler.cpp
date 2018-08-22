@@ -331,7 +331,7 @@ TEST_F(TestDisassembler, test_dis_sentinel)
 }
 
 // Test the line_to_asm() method
-TEST_F(TestDisassembler, test_dis_string)
+TEST_F(TestDisassembler, test_sentinel_dis_string)
 {
     int status;
     std::string src_filename = "data/sentinel.asm";
