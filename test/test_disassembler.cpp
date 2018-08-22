@@ -89,37 +89,7 @@ TEST_F(TestDisassembler, test_init)
     ASSERT_EQ(0, dis.numSrcLines());
 }
 
-//TEST_F(TestDisassembler, test_dis_file)
-//{
-//    int status;
-//    // Prepare some assembly output
-//    Lexer lexer(this->op_table, this->asm_src_filename);
-//    lexer.setVerbose(false);
-//    this->source_info = lexer.lex();
-//    Assembler as(this->source_info);
-//    as.setVerbose(false);
-//    as.assemble();
-//
-//    // Write binary to disk
-//    Program prog = as.getProgram();
-//    prog.setVerbose(true);
-//    prog.build();
-//    status = prog.save(this->bin_output_filename);
-//    ASSERT_EQ(0, status);
-//
-//    // disassemble the output
-//    Disassembler dis;
-//    dis.setVerbose(true);
-//    status = dis.read(this->bin_output_filename);
-//    ASSERT_EQ(0, status);
-//    std::cout << "Disassembling" << std::endl;
-//    dis.disassemble();
-//
-//    // Get the resulting SourceInfo and display
-//    SourceInfo dsource = dis.getSourceInfo();
-//    for(unsigned int idx = 0; idx < dsource.getNumLines(); ++idx)
-//        dsource.printLine(idx);
-//}
+
 
 // Expected disassembly for sentinel program
 SourceInfo get_sentinel_test_source_info(void)
@@ -359,6 +329,80 @@ TEST_F(TestDisassembler, test_dis_sentinel)
     //    std::cout << " done" << std::endl;
     //}
 }
+
+// Test the line_to_asm() method
+TEST_F(TestDisassembler, test_dis_string)
+{
+    int status;
+    std::string src_filename = "data/sentinel.asm";
+    std::string out_filename = "data/sentinel.dis";
+    // Prepare some assembly output
+    SourceInfo lex_output;
+    Lexer lexer(this->op_table, src_filename);
+    lexer.setVerbose(false);
+    lex_output = lexer.lex();
+    Assembler as(lex_output);
+    as.setVerbose(false);
+    std::cout << "\t Assembling program in file " << src_filename << std::endl;
+    as.assemble();
+    // Write binary to disk
+    Program prog = as.getProgram();
+    prog.setVerbose(true);
+    prog.build();
+    status = prog.save(out_filename);
+    ASSERT_EQ(0, status);
+
+    // disassemble the output
+    Disassembler dis;
+    dis.setVerbose(true);
+    status = dis.read(out_filename);
+    ASSERT_EQ(0, status);
+    std::cout << "Disassembling file [" << out_filename << "]" << std::endl;
+    dis.disassemble();
+
+    // For each line in the output, print the disassembly
+    SourceInfo dis_output = dis.getSourceInfo();
+    std::cout << "Dumping disassembly string for file " << src_filename << std::endl;
+    for(unsigned int idx = 0; idx < dis_output.getNumLines(); ++idx)
+    {
+        LineInfo cur_line = dis_output.get(idx);
+        std::cout << dis.line_to_asm(cur_line);
+    }
+
+}
+
+// TODO : need better tools before this is re-instated
+//TEST_F(TestDisassembler, test_dis_file)
+//{
+//    int status;
+//    // Prepare some assembly output
+//    Lexer lexer(this->op_table, this->asm_src_filename);
+//    lexer.setVerbose(false);
+//    this->source_info = lexer.lex();
+//    Assembler as(this->source_info);
+//    as.setVerbose(false);
+//    as.assemble();
+//
+//    // Write binary to disk
+//    Program prog = as.getProgram();
+//    prog.setVerbose(true);
+//    prog.build();
+//    status = prog.save(this->bin_output_filename);
+//    ASSERT_EQ(0, status);
+//
+//    // disassemble the output
+//    Disassembler dis;
+//    dis.setVerbose(true);
+//    status = dis.read(this->bin_output_filename);
+//    ASSERT_EQ(0, status);
+//    std::cout << "Disassembling" << std::endl;
+//    dis.disassemble();
+//
+//    // Get the resulting SourceInfo and display
+//    SourceInfo dsource = dis.getSourceInfo();
+//    for(unsigned int idx = 0; idx < dsource.getNumLines(); ++idx)
+//        dsource.printLine(idx);
+//}
 
 int main(int argc, char *argv[])
 {

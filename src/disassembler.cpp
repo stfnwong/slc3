@@ -238,3 +238,75 @@ SourceInfo Disassembler::getSourceInfo(void) const
 {
     return this->source;
 }
+
+std::string Disassembler::line_to_asm(const LineInfo& l)
+{
+    std::ostringstream oss;
+
+    if(l.is_label)
+        oss << l.label << ":";
+    oss << "\t " << l.opcode.mnemonic;
+    switch(l.opcode.opcode)
+    {
+        case LC3_ADD:
+        case LC3_AND:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " R" << std::dec << l.arg2 << ",";
+            if(l.is_imm)
+                oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            else
+                oss << " R" << std::dec << l.arg3;
+        break;
+
+        case LC3_BR:
+            if(l.flags & LC3_FLAG_N)
+                oss << "n";
+            if(l.flags & LC3_FLAG_Z)
+                oss << "z";
+            if(l.flags & LC3_FLAG_P)
+                oss << "p";
+            oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.imm;
+            break;
+
+        case LC3_LD:
+        case LC3_LDI:
+        case LC3_LEA:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_LDR:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " R" << std::dec << l.arg2 << ",";
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_NOT:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " R" << std::dec << l.arg2 << ",";
+            break;
+
+        case LC3_ST:
+        case LC3_STI:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_STR:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " R" << std::dec << l.arg2 << ",";
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_TRAP:
+            oss << " x" << l.imm;
+            break;
+
+
+        default:
+            break;
+    }
+    oss << std::endl;
+
+    return oss.str();
+}
