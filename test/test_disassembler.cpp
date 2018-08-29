@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <gtest/gtest.h>
 // Modules under test 
@@ -92,20 +93,12 @@ TEST_F(TestDisassembler, test_init)
 
 
 // Expected disassembly for sentinel program
+// Note that assembler directives are removedc
 SourceInfo get_sentinel_test_source_info(void)
 {
     SourceInfo info;
     LineInfo line;
 
-    // Line 6 (.ORIG x3000)
-    initLineInfo(line);
-    line.line_num        = 6;
-    line.addr            = 0x3000-1;
-    line.opcode.mnemonic = ".ORIG";
-    line.opcode.opcode   = 0;
-    line.imm             = 0x3000;
-    line.is_directive    = true;
-    info.add(line);
     // Line 7 (LD, R1, Val1)
     initLineInfo(line);
     line.line_num        = 7;
@@ -202,17 +195,6 @@ SourceInfo get_sentinel_test_source_info(void)
     line.label           = "Done";
     line.is_label        = true;
     info.add(line);
-    // Line 17 (FirstVal: .FILL #64)
-    initLineInfo(line);
-    line.line_num        = 17;
-    line.addr            = 0x3009;
-    line.opcode.mnemonic = ".FILL";
-    line.opcode.opcode   = 0x0;
-    line.imm             = 64;
-    line.label           = "FirstVal";
-    line.is_label        = true;
-    line.is_directive    = true;
-    info.add(line);
 
     return info;
 }
@@ -308,7 +290,7 @@ TEST_F(TestDisassembler, test_dis_sentinel)
     for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)
     {
         LineInfo dis_line = dis_source.get(idx);
-        LineInfo exp_line = expected_info.get(idx);
+        LineInfo exp_line = expected_info.get(idx+1);        // skip .ORIG
         std::cout << "Checking line " << idx << "(source line " << std::dec << dis_line.line_num << ") ...";
         std::cout << "<" << dis_line.opcode.mnemonic << "> (MNEMONIC ONLY)";
         //printLineDiff(dis_line, exp_line);
@@ -368,7 +350,70 @@ TEST_F(TestDisassembler, test_sentinel_dis_string)
         LineInfo cur_line = dis_output.get(idx);
         std::cout << dis.line_to_asm(cur_line);
     }
+}
 
+
+std::string get_expected_add_dis_string(void)
+{
+    std::ostringstream oss;
+
+    oss << "LD R1, #3007" << std::endl;
+    oss << "LD R2, #3008" << std::endl;
+    oss << "ADD R3, R1, R2" << std::endl;
+
+    return oss.str();
+}
+
+TEST_F(TestDisassembler, test_add_dis_string)
+{
+    int status;
+    std::string src_filename = "data/add_test.asm";
+    std::string out_filename = "data/add_test.dis";
+    // Prepare some assembly output
+    SourceInfo lex_output;
+    Lexer lexer(this->op_table, src_filename);
+    lexer.setVerbose(false);
+    lex_output = lexer.lex();
+    Assembler as(lex_output);
+    as.setVerbose(false);
+    std::cout << "\t Assembling program in file " << src_filename << std::endl;
+    as.assemble();
+    // Write binary to disk
+    Program prog = as.getProgram();
+    prog.setVerbose(true);
+    prog.build();
+    status = prog.save(out_filename);
+    ASSERT_EQ(0, status);
+
+    // disassemble the output
+    Disassembler dis;
+    dis.setVerbose(true);
+    status = dis.read(out_filename);
+    ASSERT_EQ(0, status);
+    std::cout << "Disassembling file [" << out_filename << "]" << std::endl;
+    dis.disassemble();
+
+    Program dis_program = dis.getProgram();
+    std::vector <Instr> dis_instructions = dis_program.getInstr();
+
+    // Dump raw program output
+    std::cout << " N     ADDR   DATA " << std::endl;
+    for(unsigned int idx = 0; idx < dis_instructions.size(); idx++)
+    {
+        std::cout << "[" << std::dec << std::setw(4) << std::setfill('0') << idx << "]";
+        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << dis_instructions[idx].adr;
+        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << dis_instructions[idx].ins;
+        std::cout << std::endl;
+    }
+
+    // For each line in the output, print the disassembly
+    SourceInfo dis_output = dis.getSourceInfo();
+    std::cout << "Dumping disassembly string for file " << src_filename << std::endl;
+    for(unsigned int idx = 0; idx < dis_output.getNumLines(); ++idx)
+    {
+        LineInfo cur_line = dis_output.get(idx);
+        std::cout << dis.line_to_asm(cur_line);
+    }
 }
 
 // TODO : need better tools before this is re-instated

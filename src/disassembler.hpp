@@ -63,6 +63,7 @@ class Disassembler
         bool getVerbose(void) const;
 
         SourceInfo getSourceInfo(void) const;
+        Program    getProgram(void) const;
         std::string line_to_asm(const LineInfo& l);
 };
 

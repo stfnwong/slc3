@@ -25,7 +25,7 @@ Disassembler::~Disassembler() {}
 // ===== Instruction disassembly
 inline uint8_t Disassembler::dis_opcode(const uint16_t instr) const
 {
-    return (instr & 0xF000) >> 11;
+    return (instr & 0xF000) >> 12;
 }
 inline bool Disassembler::is_imm(const uint16_t instr) const
 {
@@ -33,11 +33,11 @@ inline bool Disassembler::is_imm(const uint16_t instr) const
 }
 inline uint8_t Disassembler::dis_op1(const uint16_t instr) const
 {
-    return (instr & 0x0E00) >> 8;
+    return (instr & 0x0E00) >> 9;
 }
 inline uint8_t Disassembler::dis_op2(const uint16_t instr) const
 {
-    return (instr & 0x01E0) >> 5;
+    return (instr & 0x01E0) >> 6;
 }
 inline uint8_t Disassembler::dis_op3(const uint16_t instr) const
 {
@@ -45,7 +45,7 @@ inline uint8_t Disassembler::dis_op3(const uint16_t instr) const
 }
 inline uint8_t Disassembler::dis_flags(const uint16_t instr) const
 {
-    return (instr & 0x0E00) >> 8;
+    return (instr & 0x0E00) >> 9;
 }
 inline uint8_t Disassembler::dis_imm5(const uint16_t instr) const
 {
@@ -57,7 +57,7 @@ inline uint8_t Disassembler::dis_of6(const uint16_t instr) const
 }
 inline uint16_t Disassembler::dis_pc9(const uint16_t instr) const
 {
-    return (instr & 0x1FF);
+    return (instr & 0x01FF);
 }
 inline uint16_t Disassembler::dis_pc11(const uint16_t instr) const
 {
@@ -89,12 +89,18 @@ int Disassembler::disInstr(const Instr& instr)
             instr.adr << std::endl;
     }
 
-    o.opcode = this->dis_opcode(instr.ins);
+    o.opcode   = this->dis_opcode(instr.ins);
     o.mnemonic = this->lc3_op_table.getMnemonic(o.opcode);
     if(o.mnemonic == "OP_UNKNOWN")
     {
         std::cerr << "[" << __FUNCTION__ << "] cannot find mnemonic for opcode <0x" 
             << o.opcode << ">" << std::endl;
+    }
+    else
+    {
+        std::cout << "[" << __FUNCTION__ << "] found opcode 0x"
+            << std::hex << std::setw(2) << std::right << o.opcode 
+            << " with mnemonic " << o.mnemonic << std::endl;
     }
     this->cur_line.opcode = o;
     this->cur_line.addr   = instr.adr;
@@ -121,12 +127,20 @@ int Disassembler::disInstr(const Instr& instr)
                 this->cur_line.imm = this->dis_imm5(instr.ins);
             else
                 this->cur_line.arg3 = this->dis_op3(instr.ins);
+
             break;
 
         case LC3_BR:
             this->cur_line.opcode.mnemonic = "BR";
             this->cur_line.flags = this->dis_flags(instr.ins);
             this->cur_line.imm   = this->dis_pc9(instr.ins);
+            // Mnemonic here depends on what flags we have
+            if(this->cur_line.flags & LC3_FLAG_N)
+                this->cur_line.opcode.mnemonic += "n";
+            if(this->cur_line.flags & LC3_FLAG_Z)
+                this->cur_line.opcode.mnemonic += "z";
+            if(this->cur_line.flags & LC3_FLAG_P)
+                this->cur_line.opcode.mnemonic += "p";
             break;
 
         case LC3_JSR:
@@ -237,6 +251,11 @@ bool Disassembler::getVerbose(void) const
 SourceInfo Disassembler::getSourceInfo(void) const
 {
     return this->source;
+}
+
+Program Disassembler::getProgram(void) const
+{
+    return this->program;
 }
 
 std::string Disassembler::line_to_asm(const LineInfo& l)
