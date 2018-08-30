@@ -290,7 +290,7 @@ TEST_F(TestDisassembler, test_dis_sentinel)
     for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)
     {
         LineInfo dis_line = dis_source.get(idx);
-        LineInfo exp_line = expected_info.get(idx+1);        // skip .ORIG
+        LineInfo exp_line = expected_info.get(idx);
         std::cout << "Checking line " << idx << "(source line " << std::dec << dis_line.line_num << ") ...";
         std::cout << "<" << dis_line.opcode.mnemonic << "> (MNEMONIC ONLY)";
         //printLineDiff(dis_line, exp_line);
@@ -298,6 +298,7 @@ TEST_F(TestDisassembler, test_dis_sentinel)
         if(exp_line.opcode.mnemonic == ".ORIG")
             continue;
         ASSERT_EQ(exp_line.opcode.mnemonic, dis_line.opcode.mnemonic);
+        std::cout << std::endl;
     }
 
     //for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)

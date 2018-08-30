@@ -134,7 +134,7 @@ int Disassembler::disInstr(const Instr& instr)
             this->cur_line.opcode.mnemonic = "BR";
             this->cur_line.flags = this->dis_flags(instr.ins);
             this->cur_line.imm   = this->dis_pc9(instr.ins);
-            // Mnemonic here depends on what flags we have
+            // Add flags to mnemonic 
             if(this->cur_line.flags & LC3_FLAG_N)
                 this->cur_line.opcode.mnemonic += "n";
             if(this->cur_line.flags & LC3_FLAG_Z)
@@ -221,6 +221,14 @@ void Disassembler::disassemble(void)
         this->cur_line.line_num = this->line_ptr;
         this->source.add(this->cur_line);
         this->line_ptr++;
+        // Stop if we just disassembled the HALT instruction
+        if(this->cur_line.opcode.mnemonic == "TRAP")
+        {
+            if(this->cur_line.imm == 0x37)
+            {
+                return;
+            }
+        }
     }
 }
 
@@ -278,12 +286,6 @@ std::string Disassembler::line_to_asm(const LineInfo& l)
         break;
 
         case LC3_BR:
-            if(l.flags & LC3_FLAG_N)
-                oss << "n";
-            if(l.flags & LC3_FLAG_Z)
-                oss << "z";
-            if(l.flags & LC3_FLAG_P)
-                oss << "p";
             oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.imm;
             break;
 
