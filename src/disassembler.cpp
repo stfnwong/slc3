@@ -161,6 +161,14 @@ int Disassembler::disInstr(const Instr& instr)
 
             break;
 
+        case LC3_LDR:
+            this->cur_line.opcode.mnemonic = "LDR";
+            this->cur_line.arg1 = this->dis_op1(instr.ins);
+            this->cur_line.arg2 = this->dis_op2(instr.ins);
+            this->cur_line.imm  = this->dis_of6(instr.ins);
+
+            break;
+
         case LC3_NOT:
             this->cur_line.opcode.mnemonic = "NOT";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
@@ -286,7 +294,7 @@ std::string Disassembler::line_to_asm(const LineInfo& l)
         break;
 
         case LC3_BR:
-            oss << " $" << std::hex << std::setw(4) << std::setfill('0') << l.imm;
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
             break;
 
         case LC3_LD:

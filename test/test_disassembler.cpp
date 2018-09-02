@@ -242,6 +242,23 @@ Program get_sentinel_expected_program(void)
     return prog;
 }
 
+std::vector <std::string> get_expected_sentinel_dis_string(void)
+{
+    std::vector<std::string> dis_string;
+
+    // Note : need extra spaces to account for std::setw(4) is dis output
+    dis_string.push_back( "\t LEA R1, $8   \n" );
+    dis_string.push_back( "\t AND R3, R3, $0   \n");
+    dis_string.push_back( "\t LDR R4, R1, $0   \n");
+    dis_string.push_back( "\t BRn $4   \n");
+    dis_string.push_back( "\t ADD R3, R3, R4\n");
+    dis_string.push_back( "\t ADD R1, R1, $1   \n");
+    dis_string.push_back( "\t LDR R4, R1, $0   \n");
+    dis_string.push_back( "\t BRnzp $1fb \n");
+
+    return dis_string;
+}
+
 TEST_F(TestDisassembler, test_dis_sentinel)
 {
     int status;
@@ -284,9 +301,17 @@ TEST_F(TestDisassembler, test_dis_sentinel)
     for(unsigned int idx = 0; idx < dis_source.getNumLines(); ++idx)
         dis_source.printLine(idx);
 
-    // Compare 
+    // Collect source into a string and compare
+    std::vector<std::string> expected_dis_source = get_expected_sentinel_dis_string();
+    //ASSERT_EQ(expected_dis_source.size(), dis_source.getNumLines());
+    for(unsigned int idx = 0; idx < expected_dis_source.size(); ++idx)
+    {
+        std::cout << "Disassembly output line " << idx << std::endl;
+        ASSERT_EQ(expected_dis_source[idx], dis.line_to_asm(dis_source.get(idx)));
+    }
+
+    // Compare  (only compare opcodes)
     std::cout << "Checking disassembly output... " << std::endl;
-    // TODO : just check opcodes for now 
     for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)
     {
         LineInfo dis_line = dis_source.get(idx);
@@ -300,17 +325,6 @@ TEST_F(TestDisassembler, test_dis_sentinel)
         ASSERT_EQ(exp_line.opcode.mnemonic, dis_line.opcode.mnemonic);
         std::cout << std::endl;
     }
-
-    //for(unsigned int idx = 0; idx < expected_info.getNumLines(); ++idx)
-    //{
-    //    LineInfo dis_line = dis_source.get(idx);
-    //    LineInfo exp_line = expected_info.get(idx);
-    //    std::cout << "Checking line " << idx << "(source line " << std::dec << dis_line.line_num << ") ...";
-    //    std::cout << "<" << dis_line.opcode.mnemonic << ">";
-    //    printLineDiff(dis_line, exp_line);
-    //    ASSERT_EQ(true, compLineInfo(dis_line, exp_line));
-    //    std::cout << " done" << std::endl;
-    //}
 }
 
 // Test the line_to_asm() method
@@ -354,15 +368,16 @@ TEST_F(TestDisassembler, test_sentinel_dis_string)
 }
 
 
-std::string get_expected_add_dis_string(void)
+std::vector <std::string> get_expected_add_dis_string(void)
 {
-    std::ostringstream oss;
+    std::vector<std::string> dis_string;
 
-    oss << "LD R1, #3007" << std::endl;
-    oss << "LD R2, #3008" << std::endl;
-    oss << "ADD R3, R1, R2" << std::endl;
+    dis_string.push_back("\t LD R1, $3   \n");
+    dis_string.push_back("\t LD R2, $3   \n");
+    dis_string.push_back("\t ADD R3, R1, R2\n");
+    //dis_string.push_back("\t TRAP $37  \n");
 
-    return oss.str();
+    return dis_string;
 }
 
 TEST_F(TestDisassembler, test_add_dis_string)
@@ -408,11 +423,14 @@ TEST_F(TestDisassembler, test_add_dis_string)
     }
 
     // For each line in the output, print the disassembly
+    std::vector<std::string> expected_dis_source = get_expected_add_dis_string();
     SourceInfo dis_output = dis.getSourceInfo();
     std::cout << "Dumping disassembly string for file " << src_filename << std::endl;
-    for(unsigned int idx = 0; idx < dis_output.getNumLines(); ++idx)
+    for(unsigned int idx = 0; idx < expected_dis_source.size(); ++idx)
     {
+        std::cout << "Disassembly output line " << idx << std::endl;
         LineInfo cur_line = dis_output.get(idx);
+        ASSERT_EQ(expected_dis_source[idx], dis.line_to_asm(cur_line));
         std::cout << dis.line_to_asm(cur_line);
     }
 }
