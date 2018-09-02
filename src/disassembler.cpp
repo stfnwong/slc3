@@ -96,12 +96,7 @@ int Disassembler::disInstr(const Instr& instr)
         std::cerr << "[" << __FUNCTION__ << "] cannot find mnemonic for opcode <0x" 
             << o.opcode << ">" << std::endl;
     }
-    else
-    {
-        std::cout << "[" << __FUNCTION__ << "] found opcode 0x"
-            << std::hex << std::setw(2) << std::right << o.opcode 
-            << " with mnemonic " << o.mnemonic << std::endl;
-    }
+
     this->cur_line.opcode = o;
     this->cur_line.addr   = instr.adr;
     switch(o.opcode)
