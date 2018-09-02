@@ -103,6 +103,7 @@ class SourceInfo
 
         // String / display 
         void         printLine(const unsigned int idx);
+        std::string  lineToString(const unsigned int idx);
 }; 
 
 #endif /*__SOURCE_HPP*/

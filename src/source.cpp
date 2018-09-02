@@ -357,3 +357,11 @@ void SourceInfo::printLine(const unsigned int idx)
     std::cout << this->line_to_string(
             this->line_info[idx]);
 }
+
+std::string SourceInfo::lineToString(const unsigned int idx)
+{
+    if(idx > this->line_info.size())
+        return "\0";
+    return this->line_to_string(this->line_info[idx]);
+}
+

@@ -5,9 +5,7 @@
  */
 
 #include <iostream>
-#include <iomanip>
 #include <fstream>
-#include <sstream>
 #include "binary.hpp"
 
 Program::Program()
@@ -214,31 +212,4 @@ void Program::setVerbose(const bool v)
 bool Program::getVerbose(void) const
 {
     return this->verbose;
-}
-
-void Program::print(void)
-{
-    std::cout << "  N   ADDR    CODE" << std::endl;
-    for(unsigned int idx = 0; idx < this->instructions.size(); ++idx)
-    {
-        std::cout << "[" << std::dec << std::setw(4) << idx << "] " 
-            << this->instr_to_string(this->instructions[idx]);
-    }
-}
-
-
-
-
-// Transform an Instr to a string 
-std::string Program::instr_to_string(const Instr& instr)
-{
-    std::ostringstream oss;
-
-    oss << "$" << std::hex << std::setw(4) << std::setfill('0') 
-        << instr.adr;
-    oss << " 0x" << std::hex << std::setw(4) << std::setfill('0') 
-        << instr.ins;
-    oss << std::endl;
-
-    return oss.str();
 }
