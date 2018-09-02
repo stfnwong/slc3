@@ -22,22 +22,9 @@
 OpcodeTable test_build_op_table(void)
 {
     OpcodeTable op_table;
-    Opcode opcode_list[] = {
-        {LC3_ADD, "ADD"},
-        {LC3_AND, "AND"},
-        {LC3_LD,  "LD"},
-        {LC3_LDR, "LDR"},
-        {LC3_LEA, "LEA"},
-        {LC3_ST,  "ST"},
-        {LC3_STR, "STR"},
-        {LC3_NOT, "NOT"},
-        // BR and variants 
-        {LC3_BR,  "BR"},
-        {LC3_BRP,  "BRp"},
-        {LC3_BRN,  "BRn"},
-    };
+
     // iterate over this in the C++ way
-    for(const Opcode &op : opcode_list)
+    for(const Opcode &op : lc3_op_list)
         op_table.add(op);
 
     return op_table;
@@ -54,7 +41,7 @@ typedef struct
 void init_cmd_args(AsmArgs& args)
 {
     args.in_filename = "\0";
-    args.out_filename = "\0";
+    args.out_filename = "out.asm";
     args.errors = 0;
     args.verbose = false;
 }
@@ -83,7 +70,7 @@ AsmArgs get_cmd_args(int argc, char *argv[])
 
             case 'h':
                 std::cout << "Would print help here and exit" << std::endl;
-                args.errors++;
+                exit(0);
 
             case 'i':
                 args.in_filename = std::string(optarg);
@@ -120,11 +107,6 @@ int main(int argc, char *argv[])
     if(args.in_filename == "\0")
     {
         std::cout << "Error: no input filename specified" << std::endl;
-        return -1;
-    }
-    if(args.out_filename == "\0")
-    {
-        std::cout << "Error: no output filename specified" << std::endl;
         return -1;
     }
 
