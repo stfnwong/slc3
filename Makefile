@@ -59,9 +59,8 @@ $(TESTS): $(OBJECTS) $(TEST_OBJECTS)
 		$(INCS) -o $(TEST_BIN_DIR)/$@ $(LIBS) $(TEST_LIBS)
 
 # ======== TOOL TARGETS ========= #
-TOOLS = lc3asm 
-# TODO : lc3dis
-#
+TOOLS = lc3asm lc3dis
+
 $(TOOLS): $(OBJECTS) $(TOOL_OBJECTS)
 	$(CXX) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/$@.o \
 		$(INCS) -o $(BIN_DIR)/$@ $(LIBS) 

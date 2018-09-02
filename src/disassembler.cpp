@@ -25,7 +25,7 @@ Disassembler::~Disassembler() {}
 // ===== Instruction disassembly
 inline uint8_t Disassembler::dis_opcode(const uint16_t instr) const
 {
-    return (instr & 0xF000) >> 11;
+    return (instr & 0xF000) >> 12;
 }
 inline bool Disassembler::is_imm(const uint16_t instr) const
 {
@@ -33,11 +33,11 @@ inline bool Disassembler::is_imm(const uint16_t instr) const
 }
 inline uint8_t Disassembler::dis_op1(const uint16_t instr) const
 {
-    return (instr & 0x0E00) >> 8;
+    return (instr & 0x0E00) >> 9;
 }
 inline uint8_t Disassembler::dis_op2(const uint16_t instr) const
 {
-    return (instr & 0x01E0) >> 5;
+    return (instr & 0x01E0) >> 6;
 }
 inline uint8_t Disassembler::dis_op3(const uint16_t instr) const
 {
@@ -45,7 +45,11 @@ inline uint8_t Disassembler::dis_op3(const uint16_t instr) const
 }
 inline uint8_t Disassembler::dis_flags(const uint16_t instr) const
 {
-    return (instr & 0x0E00) >> 8;
+    return (instr & 0x0E00) >> 9;
+}
+inline uint8_t Disassembler::dis_imm5(const uint16_t instr) const
+{
+    return (instr & 0x001F);
 }
 inline uint8_t Disassembler::dis_of6(const uint16_t instr) const
 {
@@ -53,11 +57,15 @@ inline uint8_t Disassembler::dis_of6(const uint16_t instr) const
 }
 inline uint16_t Disassembler::dis_pc9(const uint16_t instr) const
 {
-    return (instr & 0x1FF);
+    return (instr & 0x01FF);
 }
 inline uint16_t Disassembler::dis_pc11(const uint16_t instr) const
 {
     return (instr & 0x0EFF);
+}
+inline uint8_t Disassembler::dis_trap8(const uint16_t instr) const
+{
+    return (instr & 0x00FF);
 }
 
 // File load 
@@ -81,8 +89,14 @@ int Disassembler::disInstr(const Instr& instr)
             instr.adr << std::endl;
     }
 
-    o.opcode = this->dis_opcode(instr.ins);
-    //o.mnemonic = this->lc3_op_table.getMnemonic(o.opcode);
+    o.opcode   = this->dis_opcode(instr.ins);
+    o.mnemonic = this->lc3_op_table.getMnemonic(o.opcode);
+    if(o.mnemonic == "OP_UNKNOWN")
+    {
+        std::cerr << "[" << __FUNCTION__ << "] cannot find mnemonic for opcode <0x" 
+            << o.opcode << ">" << std::endl;
+    }
+
     this->cur_line.opcode = o;
     this->cur_line.addr   = instr.adr;
     switch(o.opcode)
@@ -93,7 +107,7 @@ int Disassembler::disInstr(const Instr& instr)
             this->cur_line.arg2 = this->dis_op2(instr.ins);
             this->cur_line.is_imm  = this->is_imm(instr.ins);
             if(this->cur_line.is_imm)
-                this->cur_line.imm = this->dis_op3(instr.ins);
+                this->cur_line.imm = this->dis_imm5(instr.ins);
             else
                 this->cur_line.arg3 = this->dis_op3(instr.ins);
 
@@ -105,15 +119,9 @@ int Disassembler::disInstr(const Instr& instr)
             this->cur_line.arg2 = this->dis_op2(instr.ins);
             this->cur_line.is_imm  = this->is_imm(instr.ins);
             if(this->cur_line.is_imm)
-                this->cur_line.imm = this->dis_op3(instr.ins);
+                this->cur_line.imm = this->dis_imm5(instr.ins);
             else
                 this->cur_line.arg3 = this->dis_op3(instr.ins);
-
-            break;
-
-        case LC3_JSR:
-            this->cur_line.opcode.mnemonic = "JSR";
-            this->cur_line.imm = this->dis_pc11(instr.ins);
 
             break;
 
@@ -121,20 +129,38 @@ int Disassembler::disInstr(const Instr& instr)
             this->cur_line.opcode.mnemonic = "BR";
             this->cur_line.flags = this->dis_flags(instr.ins);
             this->cur_line.imm   = this->dis_pc9(instr.ins);
+            // Add flags to mnemonic 
+            if(this->cur_line.flags & LC3_FLAG_N)
+                this->cur_line.opcode.mnemonic += "n";
+            if(this->cur_line.flags & LC3_FLAG_Z)
+                this->cur_line.opcode.mnemonic += "z";
+            if(this->cur_line.flags & LC3_FLAG_P)
+                this->cur_line.opcode.mnemonic += "p";
+            break;
 
+        case LC3_JSR:
+            this->cur_line.opcode.mnemonic = "JSR";
+            this->cur_line.imm = this->dis_pc11(instr.ins);
             break;
 
         case LC3_LEA:
             this->cur_line.opcode.mnemonic = "LEA";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
             this->cur_line.imm  = this->dis_pc9(instr.ins);
-
             break;
 
         case LC3_LD:
             this->cur_line.opcode.mnemonic = "LD";
             this->cur_line.arg1 = this->dis_op1(instr.ins); 
             this->cur_line.imm  = this->dis_pc9(instr.ins);
+
+            break;
+
+        case LC3_LDR:
+            this->cur_line.opcode.mnemonic = "LDR";
+            this->cur_line.arg1 = this->dis_op1(instr.ins);
+            this->cur_line.arg2 = this->dis_op2(instr.ins);
+            this->cur_line.imm  = this->dis_of6(instr.ins);
 
             break;
 
@@ -149,11 +175,15 @@ int Disassembler::disInstr(const Instr& instr)
         case LC3_STR:
             this->cur_line.opcode.mnemonic = "STR";
             this->cur_line.arg1 = this->dis_op1(instr.ins);
+            break;
 
+        case LC3_TRAP:
+            this->cur_line.imm = this->dis_trap8(instr.ins);
             break;
 
         default:
-            std::cout << "[" << __FUNCTION__ << "] invalid opcode $" <<
+            std::cout << "[" << __FUNCTION__ << "] (line " << 
+                std::dec << this->cur_line.line_num << ") invalid opcode $" <<
                 std::uppercase << std::hex << std::setw(2) << 
                 std::setfill('0') << o.opcode 
                 << " at 0x" << instr.adr << std::endl;
@@ -176,13 +206,13 @@ void Disassembler::disassemble(void)
     }
 
     // Walk through the instructions and disassemble
+    this->line_ptr = 1;
     initLineInfo(this->cur_line);
     Instr instr;
     int status;
     for(i = 0; i < this->program.getNumInstr(); ++i)
     {
-        instr = this->program.getInstr(i);
-        // TODO : look up mnemonic
+        instr  = this->program.getInstr(i);
         status = this->disInstr(instr);
         if(status < 0)
         {
@@ -191,7 +221,17 @@ void Disassembler::disassemble(void)
                 std::dec << i+1 << "/" << 
                 std::dec << this->program.getNumInstr() << std::endl;
         }
+        this->cur_line.line_num = this->line_ptr;
         this->source.add(this->cur_line);
+        this->line_ptr++;
+        // Stop if we just disassembled the HALT instruction
+        if(this->cur_line.opcode.mnemonic == "TRAP")
+        {
+            if(this->cur_line.imm == 0x37)
+            {
+                return;
+            }
+        }
     }
 }
 
@@ -222,4 +262,75 @@ bool Disassembler::getVerbose(void) const
 SourceInfo Disassembler::getSourceInfo(void) const
 {
     return this->source;
+}
+
+Program Disassembler::getProgram(void) const
+{
+    return this->program;
+}
+
+std::string Disassembler::line_to_asm(const LineInfo& l)
+{
+    std::ostringstream oss;
+
+    if(l.is_label)
+        oss << l.label << ":";
+    oss << "\t " << l.opcode.mnemonic;
+    switch(l.opcode.opcode)
+    {
+        case LC3_ADD:
+        case LC3_AND:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " R" << std::dec << l.arg2 << ",";
+            if(l.is_imm)
+                oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            else
+                oss << " R" << std::dec << l.arg3;
+        break;
+
+        case LC3_BR:
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_LD:
+        case LC3_LDI:
+        case LC3_LEA:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_LDR:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " R" << std::dec << l.arg2 << ",";
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_NOT:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " R" << std::dec << l.arg2 << ",";
+            break;
+
+        case LC3_ST:
+        case LC3_STI:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_STR:
+            oss << " R" << std::dec << l.arg1 << ",";
+            oss << " R" << std::dec << l.arg2 << ",";
+            oss << " $" << std::hex << std::setw(4) << std::left << l.imm;
+            break;
+
+        case LC3_TRAP:
+            oss << " x" << l.imm;
+            break;
+
+
+        default:
+            break;
+    }
+    oss << std::endl;
+
+    return oss.str();
 }
