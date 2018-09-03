@@ -150,7 +150,7 @@ std::string LC3Proc::toString(void) const
  */
 LC3::LC3()
 {
-    this->mem_size = 65536;
+    this->mem_size = LC3_MEM_SIZE;
     this->allocMem();
     this->resetMem();
     this->build_op_table();
@@ -189,6 +189,20 @@ void LC3::init_machine(void)
 
     for(int i = 0; i < 8; i++)
        this->state.gpr[i] = 0;
+}
+
+/*
+ * build_op_table()
+ * Construct the internal opcode table.
+ */
+void LC3::build_op_table(void)
+{
+    // Build table of real ops
+    for(const Opcode &op : lc3_op_list)
+        this->op_table.add(op);
+    // Build table of psuedo ops 
+    for(const Opcode &op : lc3_psuedo_op_list)
+        this->psuedo_op_table.add(op);
 }
 
 void LC3::allocMem(void)
@@ -287,19 +301,7 @@ inline uint16_t LC3::zext8(const uint8_t v) const
     return (0x0000 | v);
 }
 
-/*
- * build_op_table()
- * Construct the internal opcode table.
- */
-void LC3::build_op_table(void)
-{
-    // Build table of real ops
-    for(const Opcode &op : lc3_op_list)
-        this->op_table.add(op);
-    // Build table of psuedo ops 
-    for(const Opcode &op : lc3_psuedo_op_list)
-        this->psuedo_op_table.add(op);
-}
+
 
 // ======== Memory 
 void LC3::resetMem(void)
@@ -364,6 +366,36 @@ std::vector<uint16_t> LC3::dumpMem(void) const
         mem_dump[m] = this->mem[m];
 
     return mem_dump;
+}
+
+std::vector<Instr> LC3::dumpMem(const unsigned int n, const unsigned int offset)
+{
+    unsigned int idx;
+    std::vector<Instr> mem_contents;
+
+    if(offset > this->mem_size)
+    {
+        if(this->verbose)
+            std::cerr << "[" << __FUNCTION__ << "] offset larger than machine memory" << std::endl;
+        return mem_contents;
+    }
+
+    if((n + offset) > this->mem_size)
+    {
+        if(this->verbose)
+            std::cerr << "[" << __FUNCTION__ << "] position " << n << " plus offset " << offset << " larger than machine memory" << std::endl;
+        return mem_contents;
+    }
+
+    for(idx = offset; idx < (offset + n); ++idx)
+    {
+        Instr instr;
+        instr.ins = this->mem[idx];
+        instr.adr = idx;
+        mem_contents.push_back(instr);
+    }
+
+    return mem_contents;
 }
 
 /* 
@@ -638,37 +670,41 @@ void LC3::store(void)
 }
 
 // Run an instruction cycle 
-int LC3::runCycle(void)
+int LC3::cycle(void)
 {
-    int status = 1;     // TODO: how to set incorrect status?
+    int status = 0;     // TODO: how to set incorrect status?
 
-
+    // Check clock enable
+    if(!(this->mem[LC3_MCR] & 0x8000))
+        return 1;       // stopped
     // Instruction cycle
     this->fetch();
     this->decode();
     this->eval_addr();
     this->execute();
     this->store();
-    // Check clock enable
-    if(!(this->mem[LC3_MCR] & 0x8000))
-        status = 0;
-
-    //while(1)
-    //{
-    //    this->fetch();
-    //    this->decode();
-    //    this->eval_addr();
-    //    this->execute();
-    //    this->store();
-    //    // Check clock enable
-    //    if(!(this->mem[LC3_MCR] & 0x8000))
-    //    {
-    //        status = 0;
-    //        return status;
-    //    }
-    //}
 
     return status;
+}
+
+/*
+ * enable()
+ * Set the clock enable bit
+ */
+void LC3::enable(void)
+{
+    this->mem[LC3_MCR] |= 0x8000;
+    // TODO: when the OS is setup load the start address properly
+    this->state.pc = 0x3000;
+}
+
+/*
+ * halt()
+ * Halt the machine
+ */
+void LC3::halt(void)
+{
+    this->mem[LC3_MCR] &= 0x7FFF;
 }
 
 // Getters 

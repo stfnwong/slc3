@@ -30,6 +30,7 @@ class TestLC3 : public ::testing::Test
 
 TEST_F(TestLC3, test_sentinel)
 {
+    unsigned int max_cycles = 70;
     std::string src_filename = "data/sentinel.asm";
     // Get a new machine
     LC3 machine;
@@ -47,12 +48,42 @@ TEST_F(TestLC3, test_sentinel)
     // Dump the program output 
     Program asm_output = as.getProgram();
     std::cout << "\t Assembly output for file " << src_filename << std::endl;
-    asm_output.print();
+    std::vector<Instr> as_instructions = asm_output.getInstr();
+    for(unsigned int idx = 0; idx < as_instructions.size(); ++idx)
+    {
+        std::cout << "[" << std::dec << std::setw(4) << std::setfill('0') << idx << "]";
+        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << as_instructions[idx].adr;
+        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << as_instructions[idx].ins;
+        std::cout << std::endl;
+    }
     std::cout << std::endl;
     
     // Load the program into the machine
     machine.loadMemProgram(asm_output);
+    machine.enable();
 
+    unsigned int mem_offset = 0x3000;
+    std::cout << "Dumping program memory from address 0x" << std::hex << std::left << mem_offset << std::endl;
+    std::vector<Instr> mem_dump = machine.dumpMem(32, mem_offset);
+    for(unsigned int idx = 0; idx < mem_dump.size(); ++idx)
+    {
+        std::cout << "["  << std::right << std::dec << std::setw(4) << std::setfill('0') << idx << "]";
+        std::cout << " $" << std::hex << std::setw(4) << std::setfill('0') << mem_dump[idx].adr;
+        std::cout << "  " << std::hex << std::setw(4) << std::setfill('0') << mem_dump[idx].ins;
+        std::cout << std::endl;
+    }
+
+
+    // Execute the machine
+    for(unsigned int cycle = 0; cycle < max_cycles; ++cycle)
+    {
+        std::cout << "Cycle " << cycle << "/" << max_cycles << "\r";
+        int m_status = machine.cycle();
+        if(m_status < 0)
+        {
+            std::cout << "machine stopped at cycle " << cycle << std::endl;
+        }
+    }
 }
 
 

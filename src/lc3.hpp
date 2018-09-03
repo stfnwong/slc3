@@ -229,7 +229,9 @@ class LC3
 
         // Reset CPU state 
         void     resetCPU(void);
-        int      runCycle(void);        // run the next instruction
+        void     enable(void);
+        int      cycle(void);        // run the next instruction
+        void     halt(void);
         // Memory 
         void     resetMem(void);
         void     writeMem(const uint16_t adr, const uint16_t val);
@@ -237,6 +239,7 @@ class LC3
         int      loadMemFile(const std::string& filename, int offset);
         void     loadMemProgram(const Program& p);
         std::vector<uint16_t> dumpMem(void) const;
+        std::vector<Instr>    dumpMem(const unsigned int n, const unsigned int offset);
 
         // Getters 
         LC3Proc  getProcState(void) const;
