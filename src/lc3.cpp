@@ -148,8 +148,9 @@ std::string LC3Proc::toString(void) const
  * LC3 
  * Constructor for and LC3 object
  */
-LC3::LC3()
+LC3::LC3() : proc_trace(LC3_TRACE_SIZE)
 {
+    this->save_trace = false;
     this->mem_size = LC3_MEM_SIZE;
     this->allocMem();
     this->resetMem();
@@ -162,7 +163,7 @@ LC3::~LC3()
     delete[] this->mem;
 }
 // Copy Ctor 
-LC3::LC3(const LC3& that)
+LC3::LC3(const LC3& that) : proc_trace(LC3_TRACE_SIZE)
 {
     this->mem_size = that.mem_size;
     this->allocMem();
@@ -226,7 +227,7 @@ inline bool LC3::instr_is_jmp(const uint16_t instr) const
 }
 inline uint8_t LC3::instr_get_opcode(const uint16_t instr) const
 {
-    return (instr & 0xF000) >> 8;
+    return (instr & 0xF000) >> 12;
 }
 inline uint8_t LC3::instr_get_dest(const uint16_t instr) const
 {
@@ -407,7 +408,7 @@ void LC3::fetch(void)
     if(this->verbose)
         std::cout << "[" << __FUNCTION__ << "] FETCHing next instruction" << std::endl; 
 
-    //this->state.mar = this->mem[this->state.pc];
+    this->state.mar = this->state.pc;   // this complicates things now
     this->state.pc++;
     this->state.mdr = this->mem[this->state.mar];
     this->state.ir  = this->state.mdr;
@@ -440,7 +441,6 @@ void LC3::decode(void)
                 this->state.imm  = this->sext5(this->instr_get_imm5(this->state.ir));
             else
                 this->state.sr2 = this->instr_get_sr2(this->state.ir);
-
             break;
 
         case LC3_LEA:
@@ -508,10 +508,8 @@ void LC3::eval_addr(void)
         case LC3_AND:
             break;
 
+        case LC3_LEA:
         case LC3_LD:
-            this->state.mar = this->state.imm + this->state.pc;
-            break;
-
         case LC3_LDI:
             this->state.mar = this->state.imm + this->state.pc;
             break;
@@ -547,7 +545,6 @@ void LC3::eval_addr(void)
                 << this->state.cur_opcode << ">" << std::endl;
             break;
     }
-    
 }
 
 /*
@@ -606,7 +603,21 @@ void LC3::execute(void)
             break;
     }
     // Set flags 
-    this->set_flags(this->state.gpr[this->state.dst]);
+    switch(this->state.cur_opcode)
+    {
+        case LC3_ADD:
+        case LC3_AND:
+        case LC3_NOT:
+        case LC3_LD:
+        case LC3_LDI:
+        case LC3_LDR:
+        case LC3_LEA:
+            this->set_flags(this->state.gpr[this->state.dst]);
+            break;
+
+        default:
+            break;
+    }
 }
 
 /*
@@ -623,17 +634,20 @@ void LC3::store(void)
         case LC3_BR:
         case LC3_JMP_RET:
         case LC3_JSR:
+        case LC3_NOT:
+        case LC3_RTI:
+        case LC3_TRAP:
             break;
 
         case LC3_LEA:
+            this->state.gpr[this->state.dst] = (this->state.pc + 1) + this->state.imm;
             break;
 
         case LC3_LD:
-            this->state.gpr[this->state.dst] = this->mem[this->state.pc + this->state.imm];
+            this->state.gpr[this->state.dst] = this->mem[(this->state.pc + 1) + this->state.imm];
             break;
 
         case LC3_LDI:
-            //this->state.gpr[this->state.dst] = this->mem[this->state.imm];
             this->state.gpr[this->state.dst] = this->mem[this->state.mar];
             break;
 
@@ -641,12 +655,6 @@ void LC3::store(void)
             this->state.gpr[this->state.dst] = this->mem[this->state.sr1 + this->state.imm];
             break;
 
-        case LC3_NOT:
-            break;
-
-        case LC3_RTI:
-            break;
-            
         case LC3_ST:
             this->mem[this->state.imm] = this->state.gpr[this->state.sr1];
             break;
@@ -657,9 +665,6 @@ void LC3::store(void)
 
         case LC3_STR:
             this->mem[this->state.mar] = this->state.gpr[this->state.sr1];
-            break;
-
-        case LC3_TRAP:
             break;
 
         default:
@@ -683,6 +688,9 @@ int LC3::cycle(void)
     this->eval_addr();
     this->execute();
     this->store();
+
+    if(this->save_trace)
+        this->proc_trace.add(this->state);
 
     return status;
 }
@@ -753,4 +761,21 @@ void LC3::setVerbose(const bool v)
 bool LC3::getVerbose(void) const
 {
     return this->verbose;
+}
+
+// Machine trace 
+void LC3::setTrace(const bool v)
+{
+    this->save_trace = v;
+}
+
+bool LC3::getTrace(void) const
+{
+    return this->save_trace;
+}
+
+// TODO:  wrap the trace object and access via the LC3 object?
+MTrace <LC3Proc> LC3::getMachineTrace(void) const
+{
+    return this->proc_trace;
 }

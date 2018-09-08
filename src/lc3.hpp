@@ -71,6 +71,8 @@
 
 // Memory 
 #define LC3_MEM_SIZE 65535
+// Machine trace size 
+#define LC3_TRACE_SIZE 256
 
 // TODO : until the assembler/machine interface is complete,
 // generate the op and psuedo op table for use with the lexer.
@@ -188,6 +190,11 @@ class LC3
         OpcodeTable psuedo_op_table;
 
     private:
+        // Machine trace
+        MTrace <LC3Proc> proc_trace;
+        bool             save_trace;
+
+    private:
         // Instruction decode helper functions 
         inline uint8_t  instr_get_opcode(const uint16_t instr) const;
         inline bool     instr_is_imm(const uint16_t instr) const;
@@ -255,6 +262,12 @@ class LC3
         // Verbose 
         void     setVerbose(const bool v);
         bool     getVerbose(void) const;
+
+        // Machine trace 
+        void     setTrace(const bool v);
+        bool     getTrace(void) const;
+        MTrace <LC3Proc> getMachineTrace(void) const;
+
 };
 
 #endif /*__LC3_HPP*/

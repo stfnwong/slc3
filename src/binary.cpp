@@ -169,11 +169,11 @@ int Program::save(const std::string& filename)
 
     N = (uint32_t) this->instructions.size();
     outfile.write(reinterpret_cast<char*>(&N), sizeof(uint32_t));
+    outfile.write(reinterpret_cast<char*>(
+            &this->instructions[0].adr),
+            sizeof(uint16_t));
     for(unsigned int idx = 0; idx < this->instructions.size(); ++idx)
     {
-        outfile.write(reinterpret_cast<char*>(
-                &this->instructions[idx].adr),
-                sizeof(uint16_t));
         outfile.write(reinterpret_cast<char*>(
                 &this->instructions[idx].ins),
                 sizeof(uint16_t));
@@ -184,19 +184,6 @@ int Program::save(const std::string& filename)
         }
     }
 
-    //N = (uint16_t) this->mem_size;
-    //for(unsigned int idx = 0; idx < this->mem_size; idx++)
-    //{
-    //    outfile.write(reinterpret_cast<char*>(&idx), sizeof(uint16_t));
-    //    outfile.write(reinterpret_cast<char*>(
-    //            &this->mem[idx]),
-    //            sizeof(uint16_t));
-    //    if(this->verbose)
-    //    {
-    //        std::cout << "wrote instruction " << idx + 1 << 
-    //            "/" << this->instructions.size() << "\r";
-    //    }
-    //}
     if(this->verbose)
         std::cout << std::endl;
     outfile.close();

@@ -30,7 +30,7 @@ class TestLC3 : public ::testing::Test
 
 TEST_F(TestLC3, test_sentinel)
 {
-    unsigned int max_cycles = 70;
+    unsigned int max_cycles = 20;
     std::string src_filename = "data/sentinel.asm";
     // Get a new machine
     LC3 machine;
@@ -63,8 +63,9 @@ TEST_F(TestLC3, test_sentinel)
     machine.enable();
 
     unsigned int mem_offset = 0x3000;
+    unsigned int num_addrs  = 12;
     std::cout << "Dumping program memory from address 0x" << std::hex << std::left << mem_offset << std::endl;
-    std::vector<Instr> mem_dump = machine.dumpMem(32, mem_offset);
+    std::vector<Instr> mem_dump = machine.dumpMem(num_addrs, mem_offset);
     for(unsigned int idx = 0; idx < mem_dump.size(); ++idx)
     {
         std::cout << "["  << std::right << std::dec << std::setw(4) << std::setfill('0') << idx << "]";
@@ -73,17 +74,30 @@ TEST_F(TestLC3, test_sentinel)
         std::cout << std::endl;
     }
 
-
     // Execute the machine
+    machine.setTrace(true);
+    int m_status = 0;
     for(unsigned int cycle = 0; cycle < max_cycles; ++cycle)
     {
         std::cout << "Cycle " << cycle << "/" << max_cycles << "\r";
-        int m_status = machine.cycle();
+        m_status = machine.cycle();
         if(m_status < 0)
         {
             std::cout << "machine stopped at cycle " << cycle << std::endl;
+            break;
         }
     }
+
+    // Get the machine trace object.
+    MTrace<LC3Proc> prog_trace = machine.getMachineTrace();
+    //for(unsigned t = 0; t < prog_trace.getTraceSize(); ++t)
+    for(unsigned t = 0; t < max_cycles; ++t)
+    {
+        LC3Proc trace = prog_trace.get(t);
+        std::cout << trace.toString() << std::endl;
+    }
+
+    ASSERT_EQ(0, m_status);       // fail (possibly) AFTER printing the trace
 }
 
 
