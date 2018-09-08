@@ -119,7 +119,8 @@ template <typename T> std::vector<T> MTrace<T>::dumpOrdered(void)
  */
 template <typename T> T MTrace<T>::get(const unsigned idx) const
 {
-    return this->buffer[idx % this->buffer.size()];
+    //return this->buffer[idx % this->buffer.size()];
+    return this->buffer[idx];
 }
 
 /*
