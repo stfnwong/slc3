@@ -1,0 +1,22 @@
+# Ignore swap files 
+*.swp
+*.swo
+
+# Ignore object files 
+*.o
+
+# Ignore core dumps 
+vgcore*
+
+# Ignore tags 
+tags
+
+# Ignore notes 
+notes
+
+# Ignore disassemblies
+*.dis
+
+# Ignore binaries
+lc3asm
+lc3dis
