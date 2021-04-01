@@ -16,6 +16,9 @@ notes
 
 # Ignore disassemblies
 *.dis
+# Ignore data files 
+*.dat
+*.bin
 
 # Ignore binaries
 lc3asm
